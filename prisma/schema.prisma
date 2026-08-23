@@ -1,0 +1,212 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+enum BillingType {
+  MONTHLY
+  OTHER
+}
+
+enum ClientStatus {
+  ACTIVE
+  CHURN
+  NOT_RENEWED
+}
+
+enum LeadStage {
+  LEAD
+  MQL
+  MEETING_SCHEDULED
+  MEETING_DONE
+  PROPOSAL
+  CLOSED
+  LOST
+}
+
+enum LeadSource {
+  TRAFFIC
+  PROSPECTING
+  REFERRAL
+  OTHER
+}
+
+enum TaskStatus {
+  PENDING
+  DONE
+}
+
+enum ReceivableStatus {
+  PAID
+  PENDING
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(MEMBER)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assignedLeads Lead[]        @relation("AssignedLeads")
+  assignedTasks Task[]        @relation("AssignedTasks")
+  leadHistories LeadHistory[] @relation("ChangedBy")
+}
+
+model Client {
+  id            String       @id @default(cuid())
+  name          String
+  contractValue Decimal      @db.Decimal(10, 2)
+  billingType   BillingType  @default(MONTHLY)
+  startDate     DateTime
+  endDate       DateTime?
+  duration      Int?
+  status        ClientStatus @default(ACTIVE)
+  notes         String?      @db.Text
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  receivables   Receivable[]
+  tasks         Task[]         @relation("ClientTasks")
+  conversations Conversation[]
+
+  @@index([status])
+}
+
+model Lead {
+  id             String     @id @default(cuid())
+  name           String
+  source         LeadSource @default(OTHER)
+  stage          LeadStage  @default(LEAD)
+  phone          String
+  email          String?
+  assignedToId   String?
+  estimatedValue Decimal?   @db.Decimal(10, 2)
+  notes          String?    @db.Text
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  assignedTo    User?          @relation("AssignedLeads", fields: [assignedToId], references: [id])
+  history       LeadHistory[]
+  tasks         Task[]         @relation("LeadTasks")
+  conversations Conversation[]
+
+  @@index([stage])
+  @@index([createdAt])
+}
+
+model LeadHistory {
+  id          String     @id @default(cuid())
+  leadId      String
+  fromStage   LeadStage?
+  toStage     LeadStage
+  note        String?
+  changedById String
+  createdAt   DateTime   @default(now())
+
+  lead      Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  changedBy User @relation("ChangedBy", fields: [changedById], references: [id])
+
+  @@index([leadId])
+}
+
+model Expense {
+  id          String    @id @default(cuid())
+  description String
+  category    String
+  value       Decimal   @db.Decimal(10, 2)
+  dueDay      Int
+  isRecurring Boolean   @default(false)
+  month       DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([isRecurring])
+  @@index([month])
+}
+
+model Receivable {
+  id             String           @id @default(cuid())
+  clientId       String
+  value          Decimal          @db.Decimal(10, 2)
+  referenceMonth DateTime
+  status         ReceivableStatus @default(PENDING)
+  dueDate        DateTime
+  createdAt      DateTime         @default(now())
+
+  client Client @relation(fields: [clientId], references: [id])
+
+  @@index([referenceMonth])
+  @@index([status])
+}
+
+model Task {
+  id           String     @id @default(cuid())
+  title        String
+  description  String?    @db.Text
+  assignedToId String?
+  dueDate      DateTime?
+  status       TaskStatus @default(PENDING)
+  leadId       String?
+  clientId     String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  assignedTo User?   @relation("AssignedTasks", fields: [assignedToId], references: [id])
+  lead       Lead?   @relation("LeadTasks", fields: [leadId], references: [id])
+  client     Client? @relation("ClientTasks", fields: [clientId], references: [id])
+
+  @@index([status])
+  @@index([assignedToId])
+}
+
+model Conversation {
+  id          String   @id @default(cuid())
+  leadId      String?
+  clientId    String?
+  phoneNumber String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  lead     Lead?     @relation(fields: [leadId], references: [id])
+  client   Client?   @relation(fields: [clientId], references: [id])
+  messages Message[]
+
+  @@index([phoneNumber])
+}
+
+model Message {
+  id             String           @id @default(cuid())
+  conversationId String
+  content        String           @db.Text
+  direction      MessageDirection
+  sentAt         DateTime         @default(now())
+  senderName     String?
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+}
+
+model Integration {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  config    Json     @default("{}")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
