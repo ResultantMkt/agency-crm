@@ -1,7 +1,19 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { MessageSquare, Calendar, Globe, Eye, EyeOff, Copy, Check } from "lucide-react"
+import {
+  MessageSquare,
+  Calendar,
+  Globe,
+  Eye,
+  EyeOff,
+  Copy,
+  Check,
+  Wifi,
+  WifiOff,
+  Loader2,
+  QrCode,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -21,14 +33,15 @@ interface Integration {
   updatedAt: string
 }
 
-// Hook para mostrar/ocultar senha
+type WaStatus = "idle" | "checking" | "connected" | "disconnected" | "awaiting_qr"
+
 function usePasswordToggle() {
   const [show, setShow] = useState(false)
   return { show, toggle: () => setShow((v) => !v) }
 }
 
 export default function IntegrationsPage() {
-  // Z-API state
+  // Z-API credentials state
   const [zapiInstanceId, setZapiInstanceId] = useState("")
   const [zapiToken, setZapiToken] = useState("")
   const [zapiBaseUrl, setZapiBaseUrl] = useState("https://api.z-api.io/instances")
@@ -36,6 +49,13 @@ export default function IntegrationsPage() {
   const [zapiSuccess, setZapiSuccess] = useState(false)
   const [zapiError, setZapiError] = useState<string | null>(null)
   const zapiTokenToggle = usePasswordToggle()
+
+  // WhatsApp connection state
+  const [waStatus, setWaStatus] = useState<WaStatus>("idle")
+  const [waQrCode, setWaQrCode] = useState<string | null>(null)
+  const [waConnecting, setWaConnecting] = useState(false)
+  const [waDisconnecting, setWaDisconnecting] = useState(false)
+  const [waError, setWaError] = useState<string | null>(null)
 
   // Google Calendar state
   const [gcClientId, setGcClientId] = useState("")
@@ -48,6 +68,28 @@ export default function IntegrationsPage() {
   // Respondi state
   const [webhookOrigin, setWebhookOrigin] = useState("")
   const [copied, setCopied] = useState(false)
+
+  // Poll status every 5s while awaiting QR scan
+  useEffect(() => {
+    if (waStatus !== "awaiting_qr") return
+
+    const poll = async () => {
+      try {
+        const res = await fetch("/api/zapi/status")
+        if (!res.ok) return
+        const data = await res.json()
+        if (data.connected) {
+          setWaStatus("connected")
+          setWaQrCode(null)
+        }
+      } catch {
+        // silently ignore poll errors
+      }
+    }
+
+    const id = setInterval(poll, 5000)
+    return () => clearInterval(id)
+  }, [waStatus])
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -62,9 +104,12 @@ export default function IntegrationsPage() {
 
         const zapi = integrations.find((i) => i.name === "ZAPI")
         if (zapi?.config) {
-          setZapiInstanceId(zapi.config.instanceId ?? "")
-          setZapiToken(zapi.config.token ?? "")
+          const instanceId = zapi.config.instanceId ?? ""
+          const token = zapi.config.token ?? ""
+          setZapiInstanceId(instanceId)
+          setZapiToken(token)
           setZapiBaseUrl(zapi.config.baseUrl ?? "https://api.z-api.io/instances")
+          if (instanceId && token) fetchWaStatus()
         }
 
         const gc = integrations.find((i) => i.name === "GOOGLE_CALENDAR")
@@ -73,12 +118,69 @@ export default function IntegrationsPage() {
           setGcClientSecret(gc.config.clientSecret ?? "")
         }
       } catch {
-        // silently ignore — campos ficam com valores padrão
+        // silently ignore
       }
     }
 
     loadIntegrations()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  async function fetchWaStatus() {
+    setWaStatus("checking")
+    setWaError(null)
+    try {
+      const res = await fetch("/api/zapi/status")
+      if (res.status === 400) {
+        setWaStatus("idle")
+        return
+      }
+      if (!res.ok) {
+        const d = await res.json()
+        throw new Error(d.error || "Erro ao verificar status")
+      }
+      const data = await res.json()
+      setWaStatus(data.connected ? "connected" : "disconnected")
+    } catch (err) {
+      setWaStatus("disconnected")
+      setWaError(err instanceof Error ? err.message : "Erro ao verificar status")
+    }
+  }
+
+  async function handleConnect() {
+    setWaConnecting(true)
+    setWaError(null)
+    try {
+      const res = await fetch("/api/zapi/qrcode")
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Erro ao obter QR code")
+      if (!data.value) throw new Error("QR code não disponível. Tente novamente.")
+      setWaQrCode(data.value)
+      setWaStatus("awaiting_qr")
+    } catch (err) {
+      setWaError(err instanceof Error ? err.message : "Erro ao conectar")
+    } finally {
+      setWaConnecting(false)
+    }
+  }
+
+  async function handleDisconnect() {
+    setWaDisconnecting(true)
+    setWaError(null)
+    try {
+      const res = await fetch("/api/zapi/disconnect", { method: "POST" })
+      if (!res.ok) {
+        const d = await res.json()
+        throw new Error(d.error || "Erro ao desconectar")
+      }
+      setWaStatus("disconnected")
+      setWaQrCode(null)
+    } catch (err) {
+      setWaError(err instanceof Error ? err.message : "Erro ao desconectar")
+    } finally {
+      setWaDisconnecting(false)
+    }
+  }
 
   async function saveIntegration(
     name: string,
@@ -86,7 +188,7 @@ export default function IntegrationsPage() {
     setSaving: (v: boolean) => void,
     setSuccess: (v: boolean) => void,
     setError: (v: string | null) => void
-  ) {
+  ): Promise<boolean> {
     setSaving(true)
     setError(null)
     try {
@@ -101,11 +203,24 @@ export default function IntegrationsPage() {
       }
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
+      return true
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro desconhecido")
+      return false
     } finally {
       setSaving(false)
     }
+  }
+
+  async function handleZapiSave() {
+    const ok = await saveIntegration(
+      "ZAPI",
+      { instanceId: zapiInstanceId, token: zapiToken, baseUrl: zapiBaseUrl },
+      setZapiSaving,
+      setZapiSuccess,
+      setZapiError
+    )
+    if (ok && zapiInstanceId && zapiToken) fetchWaStatus()
   }
 
   async function handleCopyWebhook() {
@@ -121,7 +236,6 @@ export default function IntegrationsPage() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-white">Integrações</h1>
         <p className="text-sm text-gray-400 mt-1">
@@ -129,7 +243,6 @@ export default function IntegrationsPage() {
         </p>
       </div>
 
-      {/* Grade de cards */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
         {/* Card 1: Z-API */}
@@ -203,18 +316,103 @@ export default function IntegrationsPage() {
             <Button
               className="w-full"
               disabled={zapiSaving}
-              onClick={() =>
-                saveIntegration(
-                  "ZAPI",
-                  { instanceId: zapiInstanceId, token: zapiToken, baseUrl: zapiBaseUrl },
-                  setZapiSaving,
-                  setZapiSuccess,
-                  setZapiError
-                )
-              }
+              onClick={handleZapiSave}
             >
               {zapiSaving ? "Salvando..." : "Salvar"}
             </Button>
+
+            {/* WhatsApp Connection */}
+            {waStatus !== "idle" && (
+              <div className="border-t border-gray-700 pt-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-300">Conexão WhatsApp</span>
+                  {waStatus === "checking" && (
+                    <Badge variant="outline" className="gap-1.5 text-gray-400">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Verificando...
+                    </Badge>
+                  )}
+                  {waStatus === "connected" && (
+                    <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 gap-1.5">
+                      <Wifi className="h-3 w-3" />
+                      Conectado
+                    </Badge>
+                  )}
+                  {waStatus === "disconnected" && (
+                    <Badge className="bg-red-500/20 text-red-400 border border-red-500/30 gap-1.5">
+                      <WifiOff className="h-3 w-3" />
+                      Desconectado
+                    </Badge>
+                  )}
+                  {waStatus === "awaiting_qr" && (
+                    <Badge className="bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 gap-1.5">
+                      <QrCode className="h-3 w-3" />
+                      Aguardando leitura...
+                    </Badge>
+                  )}
+                </div>
+
+                {waStatus === "awaiting_qr" && waQrCode && (
+                  <div className="flex flex-col items-center gap-2 py-2">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={waQrCode}
+                      alt="QR Code WhatsApp"
+                      className="w-48 h-48 rounded-lg border border-gray-600 bg-white"
+                    />
+                    <p className="text-xs text-gray-400 text-center">
+                      Abra o WhatsApp → Dispositivos conectados → Conectar dispositivo
+                    </p>
+                  </div>
+                )}
+
+                {waError && (
+                  <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+                    {waError}
+                  </p>
+                )}
+
+                {waStatus === "connected" ? (
+                  <Button
+                    variant="outline"
+                    className="w-full text-red-400 border-red-500/30 hover:bg-red-500/10"
+                    disabled={waDisconnecting}
+                    onClick={handleDisconnect}
+                  >
+                    {waDisconnecting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Desconectando...
+                      </>
+                    ) : (
+                      <>
+                        <WifiOff className="h-4 w-4 mr-2" />
+                        Desconectar
+                      </>
+                    )}
+                  </Button>
+                ) : waStatus !== "awaiting_qr" ? (
+                  <Button
+                    variant="outline"
+                    className="w-full text-green-400 border-green-500/30 hover:bg-green-500/10"
+                    disabled={waConnecting || waStatus === "checking"}
+                    onClick={handleConnect}
+                  >
+                    {waConnecting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Obtendo QR code...
+                      </>
+                    ) : (
+                      <>
+                        <QrCode className="h-4 w-4 mr-2" />
+                        Conectar WhatsApp
+                      </>
+                    )}
+                  </Button>
+                ) : null}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -361,7 +559,6 @@ export default function IntegrationsPage() {
 
       </div>
 
-      {/* Nota de segurança */}
       <p className="text-xs text-gray-500 text-center pt-2">
         As credenciais são armazenadas de forma segura no banco de dados.
       </p>
