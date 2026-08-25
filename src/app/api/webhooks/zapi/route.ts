@@ -3,6 +3,16 @@ import { normalizePhone } from "@/lib/zapi"
 import { NextRequest } from "next/server"
 
 export async function POST(request: NextRequest) {
+  const secret = process.env.WEBHOOK_SECRET
+  if (secret) {
+    const provided =
+      request.nextUrl.searchParams.get("secret") ??
+      request.headers.get("x-webhook-secret")
+    if (provided !== secret) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 })
+    }
+  }
+
   try {
     const body = await request.json()
 
