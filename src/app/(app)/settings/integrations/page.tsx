@@ -44,11 +44,13 @@ export default function IntegrationsPage() {
   // Z-API credentials state
   const [zapiInstanceId, setZapiInstanceId] = useState("")
   const [zapiToken, setZapiToken] = useState("")
+  const [zapiClientToken, setZapiClientToken] = useState("")
   const [zapiBaseUrl, setZapiBaseUrl] = useState("https://api.z-api.io/instances")
   const [zapiSaving, setZapiSaving] = useState(false)
   const [zapiSuccess, setZapiSuccess] = useState(false)
   const [zapiError, setZapiError] = useState<string | null>(null)
   const zapiTokenToggle = usePasswordToggle()
+  const zapiClientTokenToggle = usePasswordToggle()
 
   // WhatsApp connection state
   const [waStatus, setWaStatus] = useState<WaStatus>("idle")
@@ -129,10 +131,12 @@ export default function IntegrationsPage() {
         if (zapi?.config) {
           const instanceId = zapi.config.instanceId ?? ""
           const token = zapi.config.token ?? ""
+          const clientToken = zapi.config.clientToken ?? ""
           setZapiInstanceId(instanceId)
           setZapiToken(token)
+          setZapiClientToken(clientToken)
           setZapiBaseUrl(zapi.config.baseUrl ?? "https://api.z-api.io/instances")
-          if (instanceId && token) fetchWaStatus()
+          if (instanceId && token && clientToken) fetchWaStatus()
         }
 
         const gc = integrations.find((i) => i.name === "GOOGLE_CALENDAR")
@@ -308,14 +312,18 @@ export default function IntegrationsPage() {
   }
 
   async function handleZapiSave() {
+    if (!zapiClientToken) {
+      setZapiError("Client-Token é obrigatório. Encontre-o no painel Z-API em Segurança.")
+      return
+    }
     const ok = await saveIntegration(
       "ZAPI",
-      { instanceId: zapiInstanceId, token: zapiToken, baseUrl: zapiBaseUrl },
+      { instanceId: zapiInstanceId, token: zapiToken, clientToken: zapiClientToken, baseUrl: zapiBaseUrl },
       setZapiSaving,
       setZapiSuccess,
       setZapiError
     )
-    if (ok && zapiInstanceId && zapiToken) fetchWaStatus()
+    if (ok && zapiInstanceId && zapiToken && zapiClientToken) fetchWaStatus()
   }
 
   async function handleCopyWebhook() {
@@ -383,6 +391,27 @@ export default function IntegrationsPage() {
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
                 >
                   {zapiTokenToggle.show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="zapi-client-token">Client-Token</Label>
+              <div className="relative">
+                <Input
+                  id="zapi-client-token"
+                  type={zapiClientTokenToggle.show ? "text" : "password"}
+                  value={zapiClientToken}
+                  onChange={(e) => setZapiClientToken(e.target.value)}
+                  placeholder="Token de segurança da conta (painel Z-API)"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={zapiClientTokenToggle.toggle}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                >
+                  {zapiClientTokenToggle.show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>

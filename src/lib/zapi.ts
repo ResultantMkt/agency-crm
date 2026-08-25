@@ -9,6 +9,7 @@ export async function sendWhatsAppMessage(
   const baseUrl = process.env.ZAPI_BASE_URL
   const instanceId = process.env.ZAPI_INSTANCE_ID
   const token = process.env.ZAPI_TOKEN
+  const clientToken = process.env.ZAPI_CLIENT_TOKEN ?? ""
 
   if (!baseUrl) {
     throw new Error(
@@ -22,6 +23,7 @@ export async function sendWhatsAppMessage(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      "Client-Token": clientToken,
     },
     body: JSON.stringify({ phone: normalizePhone(phone), message }),
   })

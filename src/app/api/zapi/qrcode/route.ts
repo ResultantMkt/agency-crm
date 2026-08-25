@@ -8,6 +8,7 @@ async function getZapiConfig() {
     baseUrl: config?.baseUrl ?? "https://api.z-api.io/instances",
     instanceId: config?.instanceId ?? "",
     token: config?.token ?? "",
+    clientToken: config?.clientToken ?? "",
   }
 }
 
@@ -16,12 +17,14 @@ export async function GET() {
     const session = await auth()
     if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
-    const { baseUrl, instanceId, token } = await getZapiConfig()
+    const { baseUrl, instanceId, token, clientToken } = await getZapiConfig()
     if (!instanceId || !token) {
       return Response.json({ error: "Credenciais Z-API não configuradas" }, { status: 400 })
     }
 
-    const res = await fetch(`${baseUrl}/${instanceId}/token/${token}/qr-code/image`)
+    const res = await fetch(`${baseUrl}/${instanceId}/token/${token}/qr-code/image`, {
+      headers: { "Client-Token": clientToken },
+    })
     const data = await res.json()
     return Response.json(data, { status: res.status })
   } catch (error) {
