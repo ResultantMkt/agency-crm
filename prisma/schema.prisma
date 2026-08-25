@@ -54,6 +54,13 @@ enum MessageDirection {
   OUTBOUND
 }
 
+enum MessageQueueStatus {
+  PENDING
+  SENDING
+  SENT
+  FAILED
+}
+
 model User {
   id        String   @id @default(cuid())
   name      String
@@ -186,6 +193,7 @@ model Conversation {
   lead     Lead?     @relation(fields: [leadId], references: [id])
   client   Client?   @relation(fields: [clientId], references: [id])
   messages Message[]
+  queueEntries MessageQueue[]
 
   @@index([phoneNumber])
 }
@@ -199,6 +207,7 @@ model Message {
   senderName     String?
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  queueEntry   MessageQueue?
 
   @@index([conversationId])
 }
@@ -209,4 +218,38 @@ model Integration {
   config    Json     @default("{}")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model MessageQueue {
+  id             String             @id @default(cuid())
+  conversationId String
+  messageId      String             @unique
+  phone          String
+  content        String             @db.Text
+  status         MessageQueueStatus @default(PENDING)
+  error          String?
+  sentAt         DateTime?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+  message      Message      @relation(fields: [messageId], references: [id], onDelete: Cascade)
+}
+
+model ZapiQueueState {
+  id                String    @id @default("singleton")
+  sentToday         Int       @default(0)
+  lastResetAt       DateTime  @default(now())
+  consecutiveErrors Int       @default(0)
+  isPaused          Boolean   @default(false)
+  pauseReason       String?
+  lastSentAt        DateTime?
+  nextAllowedAt     DateTime?
+  maxPerDay         Int       @default(200)
+  minDelaySeconds   Int       @default(3)
+  maxDelaySeconds   Int       @default(10)
+  warmupEnabled     Boolean   @default(false)
+  warmupStartDate   DateTime?
+  warmupMultiplier  Float     @default(1.0)
+  updatedAt         DateTime  @updatedAt
 }

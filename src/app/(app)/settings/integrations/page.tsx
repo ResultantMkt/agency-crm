@@ -65,6 +65,29 @@ export default function IntegrationsPage() {
   const [gcError, setGcError] = useState<string | null>(null)
   const gcSecretToggle = usePasswordToggle()
 
+  // Queue / anti-ban state
+  const [queueState, setQueueState] = useState<{
+    sentToday: number
+    effectiveLimit: number
+    maxPerDay: number
+    isPaused: boolean
+    pauseReason: string | null
+    consecutiveErrors: number
+    pendingCount: number
+  } | null>(null)
+  const [queueSettings, setQueueSettings] = useState({
+    maxPerDay: 200,
+    minDelaySeconds: 3,
+    maxDelaySeconds: 10,
+    warmupEnabled: false,
+    warmupStartDate: "",
+    warmupMultiplier: 1.0,
+  })
+  const [queueSaving, setQueueSaving] = useState(false)
+  const [queueSaveSuccess, setQueueSaveSuccess] = useState(false)
+  const [queueSaveError, setQueueSaveError] = useState<string | null>(null)
+  const [showQueueSettings, setShowQueueSettings] = useState(false)
+
   // Respondi state
   const [webhookOrigin, setWebhookOrigin] = useState("")
   const [copied, setCopied] = useState(false)
@@ -123,6 +146,7 @@ export default function IntegrationsPage() {
     }
 
     loadIntegrations()
+    loadQueueState()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -179,6 +203,77 @@ export default function IntegrationsPage() {
       setWaError(err instanceof Error ? err.message : "Erro ao desconectar")
     } finally {
       setWaDisconnecting(false)
+    }
+  }
+
+  async function loadQueueState() {
+    try {
+      const res = await fetch("/api/queue")
+      if (!res.ok) return
+      const data = await res.json()
+      setQueueState({
+        sentToday: data.sentToday,
+        effectiveLimit: data.effectiveLimit,
+        maxPerDay: data.maxPerDay,
+        isPaused: data.isPaused,
+        pauseReason: data.pauseReason,
+        consecutiveErrors: data.consecutiveErrors,
+        pendingCount: data.pendingCount,
+      })
+      setQueueSettings({
+        maxPerDay: data.settings.maxPerDay,
+        minDelaySeconds: data.settings.minDelaySeconds,
+        maxDelaySeconds: data.settings.maxDelaySeconds,
+        warmupEnabled: data.settings.warmupEnabled,
+        warmupStartDate: data.settings.warmupStartDate
+          ? new Date(data.settings.warmupStartDate).toISOString().split("T")[0]
+          : "",
+        warmupMultiplier: data.settings.warmupMultiplier,
+      })
+    } catch {
+      // silently ignore
+    }
+  }
+
+  async function saveQueueSettings() {
+    setQueueSaving(true)
+    setQueueSaveError(null)
+    try {
+      const res = await fetch("/api/queue", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...queueSettings,
+          warmupStartDate: queueSettings.warmupStartDate
+            ? new Date(queueSettings.warmupStartDate).toISOString()
+            : null,
+          warmupMultiplier: Number(queueSettings.warmupMultiplier),
+          maxPerDay: Number(queueSettings.maxPerDay),
+          minDelaySeconds: Number(queueSettings.minDelaySeconds),
+          maxDelaySeconds: Number(queueSettings.maxDelaySeconds),
+        }),
+      })
+      if (!res.ok) throw new Error("Erro ao salvar configurações")
+      setQueueSaveSuccess(true)
+      setTimeout(() => setQueueSaveSuccess(false), 3000)
+      await loadQueueState()
+    } catch (err) {
+      setQueueSaveError(err instanceof Error ? err.message : "Erro desconhecido")
+    } finally {
+      setQueueSaving(false)
+    }
+  }
+
+  async function handleResumeQueue() {
+    try {
+      await fetch("/api/queue", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isPaused: false }),
+      })
+      await loadQueueState()
+    } catch {
+      // silently ignore
     }
   }
 
@@ -413,6 +508,173 @@ export default function IntegrationsPage() {
                 ) : null}
               </div>
             )}
+
+            {/* Queue / Anti-ban section */}
+            <div className="border-t border-gray-700 pt-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-300">Proteção contra banimento</span>
+                <button
+                  type="button"
+                  onClick={() => { loadQueueState(); setShowQueueSettings((v) => !v) }}
+                  className="text-xs text-gray-400 hover:text-white transition-colors"
+                >
+                  {showQueueSettings ? "Fechar" : "Configurar"}
+                </button>
+              </div>
+
+              {queueState && (
+                <>
+                  {queueState.isPaused && (
+                    <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+                      <p className="font-medium">⚠ Fila pausada automaticamente</p>
+                      {queueState.pauseReason && (
+                        <p className="mt-1 text-xs opacity-80">{queueState.pauseReason}</p>
+                      )}
+                      <button
+                        type="button"
+                        onClick={handleResumeQueue}
+                        className="mt-2 text-xs underline hover:no-underline"
+                      >
+                        Retomar fila
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs text-gray-400">
+                      <span>Mensagens hoje</span>
+                      <span>{queueState.sentToday} / {queueState.effectiveLimit}</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-gray-700 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${
+                          queueState.sentToday >= queueState.effectiveLimit
+                            ? "bg-red-500"
+                            : queueState.sentToday >= queueState.effectiveLimit * 0.8
+                            ? "bg-yellow-500"
+                            : "bg-emerald-500"
+                        }`}
+                        style={{ width: `${Math.min(100, (queueState.sentToday / Math.max(1, queueState.effectiveLimit)) * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {queueState.pendingCount > 0 && queueState.sentToday >= queueState.effectiveLimit && (
+                    <p className="text-xs text-yellow-400">
+                      {queueState.pendingCount} mensagem(ns) aguardando o próximo dia.
+                    </p>
+                  )}
+
+                  {queueState.pendingCount > 0 && queueState.sentToday < queueState.effectiveLimit && (
+                    <p className="text-xs text-gray-400">
+                      {queueState.pendingCount} mensagem(ns) na fila.
+                    </p>
+                  )}
+                </>
+              )}
+
+              {showQueueSettings && (
+                <div className="space-y-3 rounded-lg border border-gray-700 bg-gray-800/50 p-3">
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-gray-400">Limite diário de mensagens</label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={queueSettings.maxPerDay}
+                      onChange={(e) => setQueueSettings((s) => ({ ...s, maxPerDay: Number(e.target.value) }))}
+                      className="w-full rounded-md border border-gray-600 bg-gray-800 px-3 py-1.5 text-sm text-white outline-none focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1.5">
+                      <label className="text-xs text-gray-400">Delay mín. (s)</label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={queueSettings.minDelaySeconds}
+                        onChange={(e) => setQueueSettings((s) => ({ ...s, minDelaySeconds: Number(e.target.value) }))}
+                        className="w-full rounded-md border border-gray-600 bg-gray-800 px-3 py-1.5 text-sm text-white outline-none focus:border-blue-500"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs text-gray-400">Delay máx. (s)</label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={queueSettings.maxDelaySeconds}
+                        onChange={(e) => setQueueSettings((s) => ({ ...s, maxDelaySeconds: Number(e.target.value) }))}
+                        className="w-full rounded-md border border-gray-600 bg-gray-800 px-3 py-1.5 text-sm text-white outline-none focus:border-blue-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs text-gray-400">Modo aquecimento</label>
+                    <button
+                      type="button"
+                      onClick={() => setQueueSettings((s) => ({ ...s, warmupEnabled: !s.warmupEnabled }))}
+                      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                        queueSettings.warmupEnabled ? "bg-blue-600" : "bg-gray-600"
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform ${
+                          queueSettings.warmupEnabled ? "translate-x-4" : "translate-x-1"
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {queueSettings.warmupEnabled && (
+                    <>
+                      <div className="space-y-1.5">
+                        <label className="text-xs text-gray-400">Data de início do número</label>
+                        <input
+                          type="date"
+                          value={queueSettings.warmupStartDate}
+                          onChange={(e) => setQueueSettings((s) => ({ ...s, warmupStartDate: e.target.value }))}
+                          className="w-full rounded-md border border-gray-600 bg-gray-800 px-3 py-1.5 text-sm text-white outline-none focus:border-blue-500"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs text-gray-400">
+                          Multiplicador de aquecimento ({Math.round(Number(queueSettings.warmupMultiplier) * 100)}%)
+                        </label>
+                        <input
+                          type="range"
+                          min={0.05}
+                          max={1}
+                          step={0.05}
+                          value={queueSettings.warmupMultiplier}
+                          onChange={(e) => setQueueSettings((s) => ({ ...s, warmupMultiplier: Number(e.target.value) }))}
+                          className="w-full accent-blue-500"
+                        />
+                        <p className="text-xs text-gray-500">
+                          Limite efetivo: {Math.max(1, Math.floor(Number(queueSettings.maxPerDay) * Number(queueSettings.warmupMultiplier)))} mensagens/dia
+                        </p>
+                      </div>
+                    </>
+                  )}
+
+                  {queueSaveError && (
+                    <p className="text-xs text-red-400">{queueSaveError}</p>
+                  )}
+                  {queueSaveSuccess && (
+                    <p className="text-xs text-emerald-400">Configurações salvas!</p>
+                  )}
+
+                  <button
+                    type="button"
+                    disabled={queueSaving}
+                    onClick={saveQueueSettings}
+                    className="w-full rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-500 disabled:opacity-50 transition-colors"
+                  >
+                    {queueSaving ? "Salvando..." : "Salvar configurações"}
+                  </button>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 
