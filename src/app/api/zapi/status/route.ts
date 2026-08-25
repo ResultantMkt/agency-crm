@@ -22,8 +22,16 @@ export async function GET() {
     }
 
     const res = await fetch(`${baseUrl}/${instanceId}/token/${token}/status`)
+
+    if (!res.ok) {
+      const body = await res.text()
+      console.error(`[GET /api/zapi/status] Z-API ${res.status}: ${body}`)
+      // Treat any Z-API error as "not connected" so the frontend shows the connect button
+      return Response.json({ connected: false })
+    }
+
     const data = await res.json()
-    return Response.json(data, { status: res.status })
+    return Response.json(data)
   } catch (error) {
     console.error("[GET /api/zapi/status]", error)
     return Response.json({ error: "Erro ao verificar status" }, { status: 500 })
