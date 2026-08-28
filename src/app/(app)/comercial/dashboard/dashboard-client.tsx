@@ -1,12 +1,12 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { ChevronLeft, ChevronRight, Pencil, Check, X } from "lucide-react"
+import { Pencil, Check, X } from "lucide-react"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Metrics {
-  period: { year: number; month: number; key: string }
+  period: { dateFrom: string; dateTo: string; key: string }
   funnel: Record<string, number>
   acquisition: {
     newClients: number
@@ -43,12 +43,23 @@ const STAGE_ORDER = [
   "LOST",
 ] as const
 
-const MONTH_NAMES = [
-  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
-]
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-// ─── Formatters ───────────────────────────────────────────────────────────────
+function todayStr(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+}
+
+function monthStartStr(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`
+}
+
+function monthEndStr(): string {
+  const d = new Date()
+  const last = new Date(d.getFullYear(), d.getMonth() + 1, 0)
+  return `${last.getFullYear()}-${String(last.getMonth() + 1).padStart(2, "0")}-${String(last.getDate()).padStart(2, "0")}`
+}
 
 function formatBRL(value: number): string {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
@@ -56,15 +67,7 @@ function formatBRL(value: number): string {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function MetricCard({
-  label,
-  value,
-  sub,
-}: {
-  label: string
-  value: string | number
-  sub?: string
-}) {
+function MetricCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
     <div className="rounded-lg border border-gray-700/50 bg-gray-800/50 p-5">
       <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{label}</p>
@@ -94,19 +97,15 @@ function InvestmentCard({
 
   async function save() {
     const parsed = parseFloat(input.replace(",", "."))
-    if (isNaN(parsed) || parsed < 0) {
-      setEditing(false)
-      return
-    }
+    if (isNaN(parsed) || parsed < 0) { setEditing(false); return }
     setSaving(true)
     await onSave(parsed)
     setSaving(false)
     setEditing(false)
   }
 
-  function cancel() {
-    setEditing(false)
-  }
+  // Reset edit state when period changes
+  useEffect(() => { setEditing(false) }, [periodKey])
 
   return (
     <div className="rounded-lg border border-gray-700/50 bg-gray-800/50 p-5">
@@ -122,34 +121,21 @@ function InvestmentCard({
             step="0.01"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") save()
-              if (e.key === "Escape") cancel()
-            }}
+            onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") setEditing(false) }}
             className="w-32 rounded border border-gray-600 bg-gray-900 px-2 py-1 text-lg font-bold text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
             autoFocus
           />
-          <button
-            onClick={save}
-            disabled={saving}
-            className="rounded p-1 text-emerald-400 hover:bg-emerald-900/30"
-          >
+          <button onClick={save} disabled={saving} className="rounded p-1 text-emerald-400 hover:bg-emerald-900/30">
             <Check className="h-4 w-4" />
           </button>
-          <button
-            onClick={cancel}
-            className="rounded p-1 text-red-400 hover:bg-red-900/30"
-          >
+          <button onClick={() => setEditing(false)} className="rounded p-1 text-red-400 hover:bg-red-900/30">
             <X className="h-4 w-4" />
           </button>
         </div>
       ) : (
         <div className="group mt-2 flex items-center gap-2">
           <p className="text-2xl font-bold text-white">{formatBRL(value)}</p>
-          <button
-            onClick={startEdit}
-            className="rounded p-1 text-gray-600 opacity-0 transition-opacity group-hover:opacity-100 hover:text-gray-300"
-          >
+          <button onClick={startEdit} className="rounded p-1 text-gray-600 opacity-0 transition-opacity group-hover:opacity-100 hover:text-gray-300">
             <Pencil className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -159,13 +145,7 @@ function InvestmentCard({
   )
 }
 
-function StageCard({
-  label,
-  count,
-}: {
-  label: string
-  count: number
-}) {
+function StageCard({ label, count }: { label: string; count: number }) {
   return (
     <div className="rounded-lg border border-gray-700/50 bg-gray-800/50 p-5">
       <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{label}</p>
@@ -174,15 +154,7 @@ function StageCard({
   )
 }
 
-function FunnelBar({
-  label,
-  count,
-  maxCount,
-}: {
-  label: string
-  count: number
-  maxCount: number
-}) {
+function FunnelBar({ label, count, maxCount }: { label: string; count: number; maxCount: number }) {
   const pct = maxCount > 0 ? (count / maxCount) * 100 : 0
   return (
     <div>
@@ -193,42 +165,23 @@ function FunnelBar({
         </span>
       </div>
       <div className="h-3 w-full overflow-hidden rounded-full bg-gray-700">
-        <div
-          className="h-3 rounded-full bg-blue-500 transition-all"
-          style={{ width: `${pct}%` }}
-        />
+        <div className="h-3 rounded-full bg-blue-500 transition-all" style={{ width: `${pct}%` }} />
       </div>
     </div>
   )
 }
 
-function ConversionCard({
-  from,
-  to,
-  rate,
-}: {
-  from: string
-  to: string
-  rate: number
-}) {
-  const rateColor =
-    rate >= 50 ? "text-emerald-400" : rate >= 25 ? "text-yellow-400" : "text-red-400"
-  const barColor =
-    rate >= 50 ? "bg-emerald-500" : rate >= 25 ? "bg-yellow-500" : "bg-red-500"
-
+function ConversionCard({ from, to, rate }: { from: string; to: string; rate: number }) {
+  const rateColor = rate >= 50 ? "text-emerald-400" : rate >= 25 ? "text-yellow-400" : "text-red-400"
+  const barColor = rate >= 50 ? "bg-emerald-500" : rate >= 25 ? "bg-yellow-500" : "bg-red-500"
   return (
     <div className="rounded-lg border border-gray-700/30 bg-gray-900/50 p-5">
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm font-medium text-gray-300">
-          {from} → {to}
-        </p>
+        <p className="text-sm font-medium text-gray-300">{from} → {to}</p>
         <span className={`text-2xl font-bold ${rateColor}`}>{rate.toFixed(0)}%</span>
       </div>
       <div className="h-2 w-full overflow-hidden rounded-full bg-gray-700">
-        <div
-          className={`h-2 rounded-full transition-all ${barColor}`}
-          style={{ width: `${Math.min(rate, 100)}%` }}
-        />
+        <div className={`h-2 rounded-full transition-all ${barColor}`} style={{ width: `${Math.min(rate, 100)}%` }} />
       </div>
     </div>
   )
@@ -237,16 +190,15 @@ function ConversionCard({
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function DashboardClient() {
-  const now = new Date()
-  const [year, setYear] = useState(now.getFullYear())
-  const [month, setMonth] = useState(now.getMonth() + 1)
+  const [dateFrom, setDateFrom] = useState(monthStartStr)
+  const [dateTo, setDateTo] = useState(monthEndStr)
   const [metrics, setMetrics] = useState<Metrics | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const fetchMetrics = useCallback(async (y: number, m: number) => {
+  const fetchMetrics = useCallback(async (from: string, to: string) => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/dashboard/metrics?year=${y}&month=${m}`)
+      const res = await fetch(`/api/dashboard/metrics?dateFrom=${from}&dateTo=${to}`)
       if (res.ok) setMetrics(await res.json())
     } finally {
       setLoading(false)
@@ -254,18 +206,10 @@ export function DashboardClient() {
   }, [])
 
   useEffect(() => {
-    fetchMetrics(year, month)
-  }, [year, month, fetchMetrics])
-
-  function prevMonth() {
-    if (month === 1) { setYear(y => y - 1); setMonth(12) }
-    else setMonth(m => m - 1)
-  }
-
-  function nextMonth() {
-    if (month === 12) { setYear(y => y + 1); setMonth(1) }
-    else setMonth(m => m + 1)
-  }
+    if (dateFrom && dateTo && dateFrom <= dateTo) {
+      fetchMetrics(dateFrom, dateTo)
+    }
+  }, [dateFrom, dateTo, fetchMetrics])
 
   async function saveInvestment(value: number) {
     if (!metrics) return
@@ -274,7 +218,7 @@ export function DashboardClient() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ periodKey: metrics.period.key, value }),
     })
-    await fetchMetrics(year, month)
+    await fetchMetrics(dateFrom, dateTo)
   }
 
   const funnel = metrics?.funnel ?? {}
@@ -283,49 +227,44 @@ export function DashboardClient() {
 
   const stageValues = STAGE_ORDER.map((s) => funnel[s] ?? 0)
   const maxCount = Math.max(...stageValues, 1)
-  const totalInPipeline = stageValues.reduce((a, b) => a + b, 0)
 
   return (
     <div className="space-y-10">
       {/* Cabeçalho */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-white">Comercial — Dashboard de Vendas</h2>
-          <p className="mt-1 text-sm text-gray-400">
-            {totalInPipeline} lead{totalInPipeline !== 1 ? "s" : ""} no pipeline total
-          </p>
-        </div>
+        <h2 className="text-2xl font-bold text-white">Comercial — Dashboard de Vendas</h2>
 
-        {/* Navegação de mês */}
+        {/* Seletor de intervalo de datas */}
         <div className="flex items-center gap-2 rounded-lg border border-gray-700/50 bg-gray-800/50 px-3 py-2">
-          <button
-            onClick={prevMonth}
-            className="rounded p-1 text-gray-400 hover:bg-gray-700 hover:text-white"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <span className="w-36 text-center text-sm font-medium text-white">
-            {MONTH_NAMES[month - 1]} {year}
-          </span>
-          <button
-            onClick={nextMonth}
-            className="rounded p-1 text-gray-400 hover:bg-gray-700 hover:text-white"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
+          <label className="text-xs text-gray-500">De</label>
+          <input
+            type="date"
+            value={dateFrom}
+            max={dateTo || todayStr()}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="rounded border-0 bg-transparent text-sm font-medium text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+          <span className="text-gray-600">—</span>
+          <label className="text-xs text-gray-500">Até</label>
+          <input
+            type="date"
+            value={dateTo}
+            min={dateFrom}
+            max={todayStr()}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="rounded border-0 bg-transparent text-sm font-medium text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
         </div>
       </div>
 
-      {loading && (
-        <p className="text-sm text-gray-500">Carregando...</p>
-      )}
+      {loading && <p className="text-sm text-gray-500">Carregando...</p>}
 
       {!loading && metrics && (
         <>
           {/* Seção 1: Aquisição */}
           <section>
             <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
-              Aquisição — {MONTH_NAMES[month - 1]} {year}
+              Aquisição
             </h3>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
               <MetricCard
@@ -354,25 +293,21 @@ export function DashboardClient() {
           {/* Seção 2: Pipeline */}
           <section>
             <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
-              Pipeline Atual
+              Pipeline
             </h3>
             <p className="mb-3 text-xs text-gray-600">
-              Contagem atual de todos os leads por estágio
+              Leads criados no período, agrupados pelo estágio atual
             </p>
             <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-7">
               {STAGE_ORDER.map((stage) => (
-                <StageCard
-                  key={stage}
-                  label={STAGE_LABELS[stage]}
-                  count={funnel[stage] ?? 0}
-                />
+                <StageCard key={stage} label={STAGE_LABELS[stage]} count={funnel[stage] ?? 0} />
               ))}
             </div>
 
             <div className="rounded-lg border border-gray-700/50 bg-gray-800/50 p-6">
               <h4 className="mb-1 text-base font-semibold text-white">Progressão do Funil</h4>
               <p className="mb-5 text-xs text-gray-500">
-                Barras relativas ao estágio com maior volume
+                Barras relativas ao estágio com maior volume no período
               </p>
               <div className="space-y-4">
                 {STAGE_ORDER.map((stage) => (

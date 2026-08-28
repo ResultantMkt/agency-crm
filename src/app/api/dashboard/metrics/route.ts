@@ -1,7 +1,27 @@
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
-import { getStartOfMonth, getEndOfMonth } from "@/lib/utils"
 import { z } from "zod"
+
+function startOfDay(dateStr: string): Date {
+  const [y, m, d] = dateStr.split("-").map(Number)
+  return new Date(y, m - 1, d, 0, 0, 0, 0)
+}
+
+function endOfDay(dateStr: string): Date {
+  const [y, m, d] = dateStr.split("-").map(Number)
+  return new Date(y, m - 1, d, 23, 59, 59, 999)
+}
+
+function defaultDateFrom(): string {
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`
+}
+
+function defaultDateTo(): string {
+  const now = new Date()
+  const last = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+  return `${last.getFullYear()}-${String(last.getMonth() + 1).padStart(2, "0")}-${String(last.getDate()).padStart(2, "0")}`
+}
 
 export async function GET(request: Request) {
   try {
@@ -11,24 +31,22 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url)
-    const now = new Date()
-    const year = parseInt(searchParams.get("year") ?? String(now.getFullYear()), 10)
-    const month = parseInt(searchParams.get("month") ?? String(now.getMonth() + 1), 10)
+    const dateFrom = searchParams.get("dateFrom") ?? defaultDateFrom()
+    const dateTo = searchParams.get("dateTo") ?? defaultDateTo()
+    const periodKey = `${dateFrom}_${dateTo}`
 
-    const periodDate = new Date(year, month - 1, 1)
-    const startOfPeriod = getStartOfMonth(periodDate)
-    const endOfPeriod = getEndOfMonth(periodDate)
-
-    const periodKey = `${year}-${String(month).padStart(2, "0")}`
+    const start = startOfDay(dateFrom)
+    const end = endOfDay(dateTo)
 
     const [
       funnelCurrent,
-      closedThisPeriod,
+      closedInPeriod,
       trafficIntegration,
     ] = await Promise.all([
-      // Pipeline atual — todos os leads pelo estágio atual (sem filtro de data)
+      // Pipeline: leads criados no período, agrupados pelo estágio atual
       prisma.lead.groupBy({
         by: ["stage"],
+        where: { createdAt: { gte: start, lte: end } },
         _count: { stage: true },
       }),
 
@@ -36,7 +54,7 @@ export async function GET(request: Request) {
       prisma.leadHistory.findMany({
         where: {
           toStage: "CLOSED",
-          createdAt: { gte: startOfPeriod, lte: endOfPeriod },
+          createdAt: { gte: start, lte: end },
         },
         select: {
           leadId: true,
@@ -45,22 +63,22 @@ export async function GET(request: Request) {
         distinct: ["leadId"],
       }),
 
-      // Investimento em tráfego do mês
+      // Investimento em tráfego do período
       prisma.integration.findUnique({
         where: { name: "traffic_investment" },
         select: { config: true },
       }),
     ])
 
-    // Pipeline atual
-    const currentMap: Record<string, number> = {}
+    // Pipeline por stage
+    const funnel: Record<string, number> = {}
     for (const row of funnelCurrent) {
-      currentMap[row.stage] = row._count.stage
+      funnel[row.stage] = row._count.stage
     }
 
     // Aquisição
-    const newClients = closedThisPeriod.length
-    const newMrr = closedThisPeriod.reduce(
+    const newClients = closedInPeriod.length
+    const newMrr = closedInPeriod.reduce(
       (sum, h) => sum + Number(h.lead?.estimatedValue ?? 0),
       0
     )
@@ -68,22 +86,21 @@ export async function GET(request: Request) {
     // Investimento em tráfego
     const trafficConfig = (trafficIntegration?.config ?? {}) as Record<string, number>
     const trafficInvestment = trafficConfig[periodKey] ?? 0
-
     const cac = newClients > 0 ? trafficInvestment / newClients : null
 
-    // Taxas de conversão (baseadas no pipeline atual)
-    const leadCount = currentMap["LEAD"] ?? 0
-    const mqlCount = currentMap["MQL"] ?? 0
-    const meetings = (currentMap["MEETING_SCHEDULED"] ?? 0) + (currentMap["MEETING_DONE"] ?? 0)
-    const closedCount = currentMap["CLOSED"] ?? 0
+    // Taxas de conversão (baseadas no pipeline do período)
+    const leadCount = funnel["LEAD"] ?? 0
+    const mqlCount = funnel["MQL"] ?? 0
+    const meetings = (funnel["MEETING_SCHEDULED"] ?? 0) + (funnel["MEETING_DONE"] ?? 0)
+    const closedCount = funnel["CLOSED"] ?? 0
 
     const leadToMql = leadCount > 0 ? (mqlCount / leadCount) * 100 : 0
     const mqlToMeeting = mqlCount > 0 ? (meetings / mqlCount) * 100 : 0
     const meetingToClose = meetings > 0 ? (closedCount / meetings) * 100 : 0
 
     return Response.json({
-      period: { year, month, key: periodKey },
-      funnel: currentMap,
+      period: { dateFrom, dateTo, key: periodKey },
+      funnel,
       acquisition: {
         newClients,
         newMrr: Math.round(newMrr * 100) / 100,
@@ -111,7 +128,7 @@ export async function PATCH(request: Request) {
 
     const body = await request.json()
     const parsed = z.object({
-      periodKey: z.string().regex(/^\d{4}-\d{2}$/),
+      periodKey: z.string().min(1),
       value: z.number().min(0),
     }).safeParse(body)
 
