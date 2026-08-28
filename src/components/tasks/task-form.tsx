@@ -102,6 +102,18 @@ export function TaskForm({
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
+        if (data.details && Array.isArray(data.details)) {
+          const fieldLabels: Record<string, string> = {
+            title: "Título", description: "Descrição", assignedToId: "Responsável",
+            dueDate: "Prazo", status: "Status", leadId: "Lead", clientId: "Cliente",
+          }
+          const msg = data.details
+            .map((i: { path: string[]; message: string }) =>
+              `${fieldLabels[i.path[0]] ?? i.path.join(".")}: ${i.message}`
+            )
+            .join(" | ")
+          throw new Error(msg)
+        }
         throw new Error(data.error ?? "Erro ao salvar tarefa")
       }
 

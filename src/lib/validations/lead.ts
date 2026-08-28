@@ -1,18 +1,18 @@
 import { z } from "zod"
 
 export const createLeadSchema = z.object({
-  name: z.string().min(1),
-  phone: z.string().min(1),
-  email: z.string().email().optional().or(z.literal("")),
+  name: z.string().min(1, "Nome é obrigatório"),
+  phone: z.string().min(1, "Telefone é obrigatório"),
+  email: z.string().email("Email inválido").or(z.literal("")).nullish(),
   source: z
     .enum(["TRAFFIC", "PROSPECTING", "REFERRAL", "OTHER"])
     .default("OTHER"),
   stage: z
     .enum(["LEAD", "MQL", "MEETING_SCHEDULED", "MEETING_DONE", "PROPOSAL", "CLOSED", "LOST"])
     .default("LEAD"),
-  assignedToId: z.string().optional(),
-  estimatedValue: z.number().positive().optional(),
-  notes: z.string().optional(),
+  assignedToId: z.string().nullish(),
+  estimatedValue: z.coerce.number().positive("Valor estimado deve ser positivo").nullish(),
+  notes: z.string().nullish(),
 })
 
 export const updateLeadSchema = createLeadSchema.partial().extend({

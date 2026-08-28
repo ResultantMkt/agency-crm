@@ -125,6 +125,19 @@ export function LeadForm({ open, onClose, onSuccess, lead, users }: LeadFormProp
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
+        if (data.details && Array.isArray(data.details)) {
+          const fieldLabels: Record<string, string> = {
+            name: "Nome", phone: "Telefone", email: "Email",
+            source: "Origem", stage: "Estágio", assignedToId: "Responsável",
+            estimatedValue: "Valor estimado", notes: "Notas",
+          }
+          const msg = data.details
+            .map((i: { path: string[]; message: string }) =>
+              `${fieldLabels[i.path[0]] ?? i.path.join(".")}: ${i.message}`
+            )
+            .join(" | ")
+          throw new Error(msg)
+        }
         throw new Error(data.error ?? "Erro ao salvar lead")
       }
 
