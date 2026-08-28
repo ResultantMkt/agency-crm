@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { normalizePhone } from "@/lib/zapi"
+import { findOrCreateLead } from "@/lib/lead-capture"
 import { NextRequest } from "next/server"
 
 export async function POST(request: NextRequest) {
@@ -64,17 +65,22 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Se a conversa acabou de ser criada (sem leadId), tentar linkar a um lead existente
+    // Linkar conversa a um lead existente, ou criar novo lead automaticamente
     if (!conversation.leadId) {
-      const matchingLead = await prisma.lead.findFirst({
-        where: { phone: phoneNumber },
+      const { leadId, created } = await findOrCreateLead({
+        name: incomingName ?? phoneNumber,
+        phone: phoneNumber,
+        source: "OTHER",
+        notes: "Lead gerado automaticamente via WhatsApp",
       })
 
-      if (matchingLead) {
-        await prisma.conversation.update({
-          where: { id: conversation.id },
-          data: { leadId: matchingLead.id },
-        })
+      await prisma.conversation.update({
+        where: { id: conversation.id },
+        data: { leadId },
+      })
+
+      if (created) {
+        console.log(`[zapi webhook] Lead criado automaticamente: ${phoneNumber}`)
       }
     }
 
