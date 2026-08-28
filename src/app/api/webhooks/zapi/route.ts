@@ -20,9 +20,14 @@ export async function POST(request: NextRequest) {
     const rawPhone: string | undefined = body.phone ?? body.from
     const text: string | undefined = body.text?.message ?? body.message?.text
     const senderName: string | undefined = body.senderName ?? body.pushName
-    // Nome do contato/grupo: chatName para grupos, pushName/senderName para individuais
+    // Nome do contato/grupo: subject para grupos (Z-API), pushname para individuais
     const incomingName: string | undefined =
-      body.chatName ?? body.groupName ?? body.pushName ?? body.senderName
+      body.subject ??     // nome/assunto do grupo no WhatsApp (Z-API)
+      body.chatName ??    // alternativas
+      body.groupName ??
+      body.pushname ??    // nome do contato no WhatsApp (Z-API — lowercase)
+      body.pushName ??
+      body.senderName
 
     // Ignorar mensagens sem texto (sticker, imagem, áudio, etc.)
     if (!text || !rawPhone) {
