@@ -69,7 +69,7 @@ export default function ChatPage() {
           ) : (
             conversations.map((conv) => {
               const name =
-                conv.lead?.name ?? conv.client?.name ?? conv.phoneNumber
+                conv.contactName ?? conv.lead?.name ?? conv.client?.name ?? conv.phoneNumber
               const lastMessage =
                 conv.messages && conv.messages.length > 0
                   ? conv.messages[conv.messages.length - 1]
@@ -115,6 +115,7 @@ export default function ChatPage() {
           <ChatWindow
             conversationId={selectedConversation.id}
             conversation={selectedConversation}
+            onConversationUpdate={fetchConversations}
           />
         ) : (
           <div className="flex h-full flex-col items-center justify-center gap-3 text-gray-600">

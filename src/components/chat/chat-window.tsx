@@ -1,24 +1,29 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
-import { Send, Clock, AlertTriangle } from "lucide-react"
+import { Send, Clock, AlertTriangle, Pencil, Check, X } from "lucide-react"
 import { MessageBubble } from "@/components/chat/message-bubble"
 import type { Conversation, Message } from "@/types/models"
 
 interface ChatWindowProps {
   conversationId: string
   conversation: Conversation
+  onConversationUpdate?: () => void
 }
 
-export function ChatWindow({ conversationId, conversation }: ChatWindowProps) {
+export function ChatWindow({ conversationId, conversation, onConversationUpdate }: ChatWindowProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [sending, setSending] = useState(false)
   const [queuePaused, setQueuePaused] = useState(false)
   const [queuePendingCount, setQueuePendingCount] = useState(0)
   const [dailyLimitReached, setDailyLimitReached] = useState(false)
+  const [editingName, setEditingName] = useState(false)
+  const [nameInput, setNameInput] = useState("")
+  const [savingName, setSavingName] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const nameInputRef = useRef<HTMLInputElement>(null)
 
   const fetchMessages = useCallback(async () => {
     const res = await fetch(`/api/conversations/${conversationId}/messages`)
@@ -96,15 +101,91 @@ export function ChatWindow({ conversationId, conversation }: ChatWindowProps) {
     }
   }
 
-  const contactName =
+  const resolvedName =
+    conversation.contactName ??
     conversation.lead?.name ??
     conversation.client?.name ??
     conversation.phoneNumber
 
+  function startEditing() {
+    setNameInput(resolvedName)
+    setEditingName(true)
+    setTimeout(() => nameInputRef.current?.select(), 0)
+  }
+
+  function cancelEditing() {
+    setEditingName(false)
+    setNameInput("")
+  }
+
+  async function saveName() {
+    const trimmed = nameInput.trim()
+    if (!trimmed || trimmed === resolvedName) {
+      cancelEditing()
+      return
+    }
+    setSavingName(true)
+    try {
+      const res = await fetch(`/api/conversations/${conversationId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contactName: trimmed }),
+      })
+      if (res.ok) {
+        onConversationUpdate?.()
+      }
+    } finally {
+      setSavingName(false)
+      setEditingName(false)
+      setNameInput("")
+    }
+  }
+
   return (
     <div className="flex h-full flex-col">
       <div className="shrink-0 border-b border-gray-700/50 px-6 py-4">
-        <h3 className="font-semibold text-white">{contactName}</h3>
+        {editingName ? (
+          <div className="flex items-center gap-2">
+            <input
+              ref={nameInputRef}
+              value={nameInput}
+              onChange={(e) => setNameInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") saveName()
+                if (e.key === "Escape") cancelEditing()
+              }}
+              disabled={savingName}
+              className="flex-1 rounded border border-gray-600 bg-gray-800 px-2 py-0.5 text-sm font-semibold text-white outline-none focus:border-blue-500"
+            />
+            <button
+              onClick={saveName}
+              disabled={savingName}
+              className="text-green-400 hover:text-green-300 disabled:opacity-50"
+              title="Salvar"
+            >
+              <Check className="h-4 w-4" />
+            </button>
+            <button
+              onClick={cancelEditing}
+              disabled={savingName}
+              className="text-gray-500 hover:text-gray-300 disabled:opacity-50"
+              title="Cancelar"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 group">
+            <h3 className="font-semibold text-white">{resolvedName}</h3>
+            <button
+              onClick={startEditing}
+              className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-gray-300 transition-opacity"
+              title="Editar nome"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
         <p className="text-xs text-gray-500">{conversation.phoneNumber}</p>
       </div>
 

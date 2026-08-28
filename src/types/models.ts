@@ -84,6 +84,8 @@ export interface Conversation {
   leadId?: string | null
   clientId?: string | null
   phoneNumber: string
+  contactName?: string | null
+  contactNameManual?: boolean
   createdAt: string
   updatedAt: string
   lead?: { name: string } | null

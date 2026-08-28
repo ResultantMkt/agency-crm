@@ -20,6 +20,9 @@ export async function POST(request: NextRequest) {
     const rawPhone: string | undefined = body.phone ?? body.from
     const text: string | undefined = body.text?.message ?? body.message?.text
     const senderName: string | undefined = body.senderName ?? body.pushName
+    // Nome do contato/grupo: chatName para grupos, pushName/senderName para individuais
+    const incomingName: string | undefined =
+      body.chatName ?? body.groupName ?? body.pushName ?? body.senderName
 
     // Ignorar mensagens sem texto (sticker, imagem, áudio, etc.)
     if (!text || !rawPhone) {
@@ -41,11 +44,20 @@ export async function POST(request: NextRequest) {
         phoneNumber,
         leadId: null,
         clientId: null,
+        contactName: incomingName ?? null,
       },
       update: {
         updatedAt: new Date(),
       },
     })
+
+    // Atualiza o nome somente se não foi editado manualmente pelo usuário
+    if (incomingName) {
+      await prisma.conversation.updateMany({
+        where: { phoneNumber, contactNameManual: false },
+        data: { contactName: incomingName },
+      })
+    }
 
     // Se a conversa acabou de ser criada (sem leadId), tentar linkar a um lead existente
     if (!conversation.leadId) {

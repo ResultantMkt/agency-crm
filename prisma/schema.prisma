@@ -183,12 +183,14 @@ model Task {
 }
 
 model Conversation {
-  id          String   @id @default(cuid())
-  leadId      String?
-  clientId    String?
-  phoneNumber String   @unique
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                  String   @id @default(cuid())
+  leadId              String?
+  clientId            String?
+  phoneNumber         String   @unique
+  contactName         String?
+  contactNameManual   Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   lead     Lead?     @relation(fields: [leadId], references: [id])
   client   Client?   @relation(fields: [clientId], references: [id])
