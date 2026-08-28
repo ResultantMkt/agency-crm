@@ -190,56 +190,57 @@ export function TaskForm({
             </div>
           </div>
 
+          {/* Lead relacionado — sempre visível */}
           <div className="space-y-1.5">
-            <Label htmlFor="task-status">Status</Label>
-            <Select value={status} onValueChange={(v) => setStatus(v as "PENDING" | "DONE")}>
-              <SelectTrigger id="task-status">
-                <SelectValue />
+            <Label htmlFor="task-lead">Lead relacionado (opcional)</Label>
+            <Select value={leadId} onValueChange={setLeadId}>
+              <SelectTrigger id="task-lead">
+                <SelectValue placeholder="Selecionar lead..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="PENDING">Pendente</SelectItem>
-                <SelectItem value="DONE">Concluída</SelectItem>
+                <SelectItem value={NONE}>Nenhum</SelectItem>
+                {leads.map((l) => (
+                  <SelectItem key={l.id} value={l.id}>
+                    {l.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
 
-          {leads.length > 0 && (
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="task-lead">Vincular a Lead (opcional)</Label>
-              <Select value={leadId} onValueChange={setLeadId}>
-                <SelectTrigger id="task-lead">
-                  <SelectValue placeholder="Selecionar lead..." />
+              <Label htmlFor="task-status">Status</Label>
+              <Select value={status} onValueChange={(v) => setStatus(v as "PENDING" | "DONE")}>
+                <SelectTrigger id="task-status">
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={NONE}>Nenhuma</SelectItem>
-                  {leads.map((l) => (
-                    <SelectItem key={l.id} value={l.id}>
-                      {l.name}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="PENDING">Pendente</SelectItem>
+                  <SelectItem value="DONE">Concluída</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-          )}
 
-          {clients.length > 0 && (
-            <div className="space-y-1.5">
-              <Label htmlFor="task-client">Vincular a Cliente (opcional)</Label>
-              <Select value={clientId} onValueChange={setClientId}>
-                <SelectTrigger id="task-client">
-                  <SelectValue placeholder="Selecionar cliente..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NONE}>Nenhum</SelectItem>
-                  {clients.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+            {clients.length > 0 && (
+              <div className="space-y-1.5">
+                <Label htmlFor="task-client">Cliente (opcional)</Label>
+                <Select value={clientId} onValueChange={setClientId}>
+                  <SelectTrigger id="task-client">
+                    <SelectValue placeholder="Selecionar..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NONE}>Nenhum</SelectItem>
+                    {clients.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
