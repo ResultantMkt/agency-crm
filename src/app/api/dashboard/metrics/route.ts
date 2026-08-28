@@ -1,136 +1,95 @@
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { getStartOfMonth, getEndOfMonth } from "@/lib/utils"
+import { z } from "zod"
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await auth()
     if (!session) {
       return Response.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const { searchParams } = new URL(request.url)
     const now = new Date()
-    const startOfMonth = getStartOfMonth(now)
-    const endOfMonth = getEndOfMonth(now)
+    const year = parseInt(searchParams.get("year") ?? String(now.getFullYear()), 10)
+    const month = parseInt(searchParams.get("month") ?? String(now.getMonth() + 1), 10)
+
+    const periodDate = new Date(year, month - 1, 1)
+    const startOfPeriod = getStartOfMonth(periodDate)
+    const endOfPeriod = getEndOfMonth(periodDate)
+
+    const periodKey = `${year}-${String(month).padStart(2, "0")}`
 
     const [
-      activeClients,
-      churnsThisMonth,
-      receivablesThisMonth,
-      expensesThisMonth,
-      recurringExpenses,
-      funnelGroups,
+      funnelCurrent,
+      closedThisPeriod,
+      trafficIntegration,
     ] = await Promise.all([
-      // Clientes ativos
-      prisma.client.count({ where: { status: "ACTIVE" } }),
-
-      // Churns no mês atual
-      prisma.client.findMany({
-        where: {
-          status: "CHURN",
-          updatedAt: { gte: startOfMonth, lte: endOfMonth },
-        },
-        select: { contractValue: true },
-      }),
-
-      // Recebíveis do mês (PAID)
-      prisma.receivable.findMany({
-        where: {
-          referenceMonth: { gte: startOfMonth, lte: endOfMonth },
-          status: "PAID",
-        },
-        select: { value: true },
-      }),
-
-      // Despesas do mês (não recorrentes)
-      prisma.expense.findMany({
-        where: {
-          isRecurring: false,
-          month: { gte: startOfMonth, lte: endOfMonth },
-        },
-        select: { value: true },
-      }),
-
-      // Despesas recorrentes
-      prisma.expense.findMany({
-        where: { isRecurring: true },
-        select: { value: true },
-      }),
-
-      // Funil: pipeline atual — todos os leads agrupados pelo estágio atual
+      // Pipeline atual — todos os leads pelo estágio atual (sem filtro de data)
       prisma.lead.groupBy({
         by: ["stage"],
         _count: { stage: true },
       }),
+
+      // Aquisição: leads que entraram em CLOSED no período via LeadHistory
+      prisma.leadHistory.findMany({
+        where: {
+          toStage: "CLOSED",
+          createdAt: { gte: startOfPeriod, lte: endOfPeriod },
+        },
+        select: {
+          leadId: true,
+          lead: { select: { estimatedValue: true } },
+        },
+        distinct: ["leadId"],
+      }),
+
+      // Investimento em tráfego do mês
+      prisma.integration.findUnique({
+        where: { name: "traffic_investment" },
+        select: { config: true },
+      }),
     ])
 
-    // MRR = soma de recebíveis PAID do mês
-    const mrr = receivablesThisMonth.reduce(
-      (sum: number, r: { value: unknown }) => sum + Number(r.value),
-      0
-    )
-
-    // Despesas totais = recorrentes + do mês
-    const totalExpenses =
-      expensesThisMonth.reduce((sum: number, e: { value: unknown }) => sum + Number(e.value), 0) +
-      recurringExpenses.reduce((sum: number, e: { value: unknown }) => sum + Number(e.value), 0)
-
-    // Billing = MRR (recebíveis pagos no mês)
-    const billing = mrr
-
-    // Cashflow e margem
-    const cashflow = billing - totalExpenses
-    const margin = billing > 0 ? (cashflow / billing) * 100 : 0
-
-    // Churns
-    const churnsCount = churnsThisMonth.length
-    const churnValue = churnsThisMonth.reduce(
-      (sum: number, c: { contractValue: unknown }) => sum + Number(c.contractValue),
-      0
-    )
-
-    // Montar funil
-    const stageOrder = [
-      "LEAD",
-      "MQL",
-      "MEETING_SCHEDULED",
-      "MEETING_DONE",
-      "PROPOSAL",
-      "CLOSED",
-      "LOST",
-    ] as const
-
-    type LeadStage = typeof stageOrder[number]
-
-    const funnel = stageOrder.reduce<Record<LeadStage, number>>((acc, stage) => {
-      acc[stage] = 0
-      return acc
-    }, {} as Record<LeadStage, number>)
-
-    for (const group of funnelGroups) {
-      funnel[group.stage as LeadStage] = group._count.stage
+    // Pipeline atual
+    const currentMap: Record<string, number> = {}
+    for (const row of funnelCurrent) {
+      currentMap[row.stage] = row._count.stage
     }
 
-    // Taxas de conversão
-    const leadCount = funnel["LEAD"]
-    const mqlCount = funnel["MQL"]
-    const meetingCount = funnel["MEETING_SCHEDULED"] + funnel["MEETING_DONE"]
-    const closedCount = funnel["CLOSED"]
+    // Aquisição
+    const newClients = closedThisPeriod.length
+    const newMrr = closedThisPeriod.reduce(
+      (sum, h) => sum + Number(h.lead?.estimatedValue ?? 0),
+      0
+    )
+
+    // Investimento em tráfego
+    const trafficConfig = (trafficIntegration?.config ?? {}) as Record<string, number>
+    const trafficInvestment = trafficConfig[periodKey] ?? 0
+
+    const cac = newClients > 0 ? trafficInvestment / newClients : null
+
+    // Taxas de conversão (baseadas no pipeline atual)
+    const leadCount = currentMap["LEAD"] ?? 0
+    const mqlCount = currentMap["MQL"] ?? 0
+    const meetings = (currentMap["MEETING_SCHEDULED"] ?? 0) + (currentMap["MEETING_DONE"] ?? 0)
+    const closedCount = currentMap["CLOSED"] ?? 0
 
     const leadToMql = leadCount > 0 ? (mqlCount / leadCount) * 100 : 0
-    const mqlToMeeting = mqlCount > 0 ? (meetingCount / mqlCount) * 100 : 0
-    const meetingToClose = meetingCount > 0 ? (closedCount / meetingCount) * 100 : 0
+    const mqlToMeeting = mqlCount > 0 ? (meetings / mqlCount) * 100 : 0
+    const meetingToClose = meetings > 0 ? (closedCount / meetings) * 100 : 0
 
     return Response.json({
-      activeClients,
-      mrr: Math.round(mrr * 100) / 100,
-      churnsThisMonth: churnsCount,
-      churnValue: Math.round(churnValue * 100) / 100,
-      billing: Math.round(billing * 100) / 100,
-      expenses: Math.round(totalExpenses * 100) / 100,
-      cashflow: Math.round(cashflow * 100) / 100,
-      margin: Math.round(margin * 10) / 10,
-      funnel,
+      period: { year, month, key: periodKey },
+      funnel: currentMap,
+      acquisition: {
+        newClients,
+        newMrr: Math.round(newMrr * 100) / 100,
+        trafficInvestment,
+        cac: cac !== null ? Math.round(cac * 100) / 100 : null,
+      },
       conversionRates: {
         leadToMql: Math.round(leadToMql * 10) / 10,
         mqlToMeeting: Math.round(mqlToMeeting * 10) / 10,
@@ -139,6 +98,46 @@ export async function GET() {
     })
   } catch (error) {
     console.error("[GET /api/dashboard/metrics]", error)
+    return Response.json({ error: "Internal server error" }, { status: 500 })
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const session = await auth()
+    if (!session) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const parsed = z.object({
+      periodKey: z.string().regex(/^\d{4}-\d{2}$/),
+      value: z.number().min(0),
+    }).safeParse(body)
+
+    if (!parsed.success) {
+      return Response.json({ error: "Invalid input" }, { status: 400 })
+    }
+
+    const { periodKey, value } = parsed.data
+
+    const existing = await prisma.integration.findUnique({
+      where: { name: "traffic_investment" },
+      select: { config: true },
+    })
+
+    const config = ((existing?.config ?? {}) as Record<string, number>)
+    config[periodKey] = value
+
+    await prisma.integration.upsert({
+      where: { name: "traffic_investment" },
+      create: { name: "traffic_investment", config },
+      update: { config },
+    })
+
+    return Response.json({ ok: true })
+  } catch (error) {
+    console.error("[PATCH /api/dashboard/metrics]", error)
     return Response.json({ error: "Internal server error" }, { status: 500 })
   }
 }
