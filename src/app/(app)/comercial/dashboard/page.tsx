@@ -166,62 +166,59 @@ export default async function ComercialDashboardPage() {
   const thirtyDaysAgo = new Date(now)
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
-  const [funnelMonth, funnelAll, leadsLast30] = await Promise.all([
-    // Leads por stage no mês atual
-    prisma.lead.groupBy({
-      by: ["stage"],
-      where: {
-        createdAt: { gte: startOfMonth, lte: endOfMonth },
-      },
-      _count: { stage: true },
-    }),
-
-    // Leads por stage — histórico total
+  const [funnelCurrent, funnelThisMonth, leadsLast30] = await Promise.all([
+    // Pipeline atual: todos os leads agrupados pelo estágio ATUAL (sem filtro de data)
+    // Mover um lead no Kanban reflete imediatamente aqui.
     prisma.lead.groupBy({
       by: ["stage"],
       _count: { stage: true },
     }),
 
-    // Leads criados nos últimos 30 dias
+    // Leads criados no mês atual, agrupados pelo estágio atual
+    prisma.lead.groupBy({
+      by: ["stage"],
+      where: { createdAt: { gte: startOfMonth, lte: endOfMonth } },
+      _count: { stage: true },
+    }),
+
+    // Leads criados nos últimos 30 dias (contador de atividade)
     prisma.lead.count({
-      where: {
-        createdAt: { gte: thirtyDaysAgo },
-      },
+      where: { createdAt: { gte: thirtyDaysAgo } },
     }),
   ])
 
-  // Mapear contagens do mês por stage
+  // Mapear pipeline atual por stage
+  const currentMap: Record<string, number> = {}
+  for (const row of funnelCurrent) {
+    currentMap[row.stage] = row._count.stage
+  }
+
+  // Mapear leads do mês por stage
   const monthMap: Record<string, number> = {}
-  for (const row of funnelMonth) {
+  for (const row of funnelThisMonth) {
     monthMap[row.stage] = row._count.stage
   }
 
-  // Mapear contagens históricas por stage
-  const allMap: Record<string, number> = {}
-  for (const row of funnelAll) {
-    allMap[row.stage] = row._count.stage
-  }
-
-  // Contagens do mês por stage
-  const leadCount = monthMap["LEAD"] ?? 0
-  const mqlCount = monthMap["MQL"] ?? 0
-  const meetingScheduled = monthMap["MEETING_SCHEDULED"] ?? 0
-  const meetingDone = monthMap["MEETING_DONE"] ?? 0
-  const proposalCount = monthMap["PROPOSAL"] ?? 0
-  const closedCount = monthMap["CLOSED"] ?? 0
-  const lostCount = monthMap["LOST"] ?? 0
+  // Contagens do pipeline atual
+  const leadCount = currentMap["LEAD"] ?? 0
+  const mqlCount = currentMap["MQL"] ?? 0
+  const meetingScheduled = currentMap["MEETING_SCHEDULED"] ?? 0
+  const meetingDone = currentMap["MEETING_DONE"] ?? 0
+  const proposalCount = currentMap["PROPOSAL"] ?? 0
+  const closedCount = currentMap["CLOSED"] ?? 0
+  const lostCount = currentMap["LOST"] ?? 0
 
   // Reuniões = agendadas + realizadas
   const reunioes = meetingScheduled + meetingDone
 
-  // Taxas de conversão do mês
+  // Taxas de conversão baseadas no pipeline atual
   const rateLeadToMql = leadCount > 0 ? (mqlCount / leadCount) * 100 : 0
   const rateMqlToReuniao = mqlCount > 0 ? (reunioes / mqlCount) * 100 : 0
   const rateReuniaoToFechado =
     reunioes > 0 ? (closedCount / reunioes) * 100 : 0
 
-  // Maior contagem do mês para normalizar as barras do funil
-  const maxMonthCount = Math.max(
+  // Maior contagem para normalizar as barras do funil
+  const maxCount = Math.max(
     leadCount,
     mqlCount,
     meetingScheduled,
@@ -232,7 +229,7 @@ export default async function ComercialDashboardPage() {
     1
   )
 
-  const monthCountByStage: Record<string, number> = {
+  const currentByStage: Record<string, number> = {
     LEAD: leadCount,
     MQL: mqlCount,
     MEETING_SCHEDULED: meetingScheduled,
@@ -241,6 +238,11 @@ export default async function ComercialDashboardPage() {
     CLOSED: closedCount,
     LOST: lostCount,
   }
+
+  const totalInPipeline = STAGE_ORDER.reduce(
+    (sum, s) => sum + (currentByStage[s] ?? 0),
+    0
+  )
 
   return (
     <div className="space-y-8">
@@ -251,21 +253,25 @@ export default async function ComercialDashboardPage() {
         </h2>
         <p className="mt-1 text-sm text-gray-400">
           {formatMonth(now)} · {leadsLast30} lead
-          {leadsLast30 !== 1 ? "s" : ""} nos últimos 30 dias
+          {leadsLast30 !== 1 ? "s" : ""} nos últimos 30 dias ·{" "}
+          {totalInPipeline} no pipeline total
         </p>
       </div>
 
-      {/* Cards de contagem por stage — mês atual */}
+      {/* Cards de contagem por stage — pipeline atual */}
       <section>
         <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
-          Funil do Mês
+          Pipeline Atual
         </h3>
+        <p className="mb-3 text-xs text-gray-600">
+          Contagem atual de todos os leads por estágio — atualiza ao mover leads no Kanban
+        </p>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-7">
           {STAGE_ORDER.map((stage) => (
             <StageCard
               key={stage}
               label={STAGE_LABELS[stage]}
-              count={monthCountByStage[stage]}
+              count={currentByStage[stage]}
               color={stageColor(stage)}
             />
           ))}
@@ -279,7 +285,7 @@ export default async function ComercialDashboardPage() {
             Progressão do Funil
           </h3>
           <p className="mb-5 text-xs text-gray-500">
-            Barras relativas ao stage com maior volume no mês
+            Barras relativas ao estágio com maior volume no pipeline atual
           </p>
 
           <div className="space-y-4">
@@ -287,8 +293,8 @@ export default async function ComercialDashboardPage() {
               <FunnelBar
                 key={stage}
                 label={STAGE_LABELS[stage]}
-                count={monthCountByStage[stage]}
-                maxCount={maxMonthCount}
+                count={currentByStage[stage]}
+                maxCount={maxCount}
                 color={funnelBarColor(stage)}
               />
             ))}
@@ -299,7 +305,7 @@ export default async function ComercialDashboardPage() {
       {/* Cards de taxa de conversão */}
       <section>
         <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
-          Taxas de Conversão — {formatMonth(now)}
+          Taxas de Conversão
         </h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <ConversionCard
@@ -320,19 +326,19 @@ export default async function ComercialDashboardPage() {
         </div>
       </section>
 
-      {/* Volume histórico por stage */}
+      {/* Leads criados no mês atual por estágio */}
       <section>
         <div className="rounded-lg border border-gray-700/50 bg-gray-800/50 p-6">
           <h3 className="mb-1 text-base font-semibold text-white">
-            Volume Histórico por Stage
+            Novos Leads — {formatMonth(now)}
           </h3>
           <p className="mb-5 text-xs text-gray-500">
-            Total acumulado de todos os períodos
+            Leads criados neste mês, agrupados pelo estágio atual
           </p>
 
           <div className="grid grid-cols-2 gap-x-8 gap-y-3 sm:grid-cols-3 lg:grid-cols-7">
             {STAGE_ORDER.map((stage) => {
-              const total = allMap[stage] ?? 0
+              const total = monthMap[stage] ?? 0
               return (
                 <div key={stage} className="text-center">
                   <p className="text-2xl font-bold text-white">{total}</p>

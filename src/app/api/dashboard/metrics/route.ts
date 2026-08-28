@@ -57,10 +57,9 @@ export async function GET() {
         select: { value: true },
       }),
 
-      // Funil: leads criados no mês agrupados por stage
+      // Funil: pipeline atual — todos os leads agrupados pelo estágio atual
       prisma.lead.groupBy({
         by: ["stage"],
-        where: { createdAt: { gte: startOfMonth, lte: endOfMonth } },
         _count: { stage: true },
       }),
     ])
