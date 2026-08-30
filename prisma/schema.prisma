@@ -213,6 +213,9 @@ model Message {
   direction      MessageDirection
   sentAt         DateTime         @default(now())
   senderName     String?
+  mediaType      String?
+  mediaUrl       String?   @db.Text
+  mediaName      String?
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   queueEntry   MessageQueue?

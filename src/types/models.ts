@@ -106,4 +106,7 @@ export interface Message {
   direction: MessageDirection
   sentAt: string
   senderName?: string | null
+  mediaType?: string | null
+  mediaUrl?: string | null
+  mediaName?: string | null
 }

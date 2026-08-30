@@ -14,16 +14,21 @@ export async function GET(
 
     const conversation = await prisma.conversation.findUnique({
       where: { id },
-      select: { leadId: true, phoneNumber: true },
+      select: { leadId: true, phoneNumber: true, contactName: true },
     })
     if (!conversation) return Response.json({ error: "Not found" }, { status: 404 })
 
-    // Find lead via leadId first, fallback to phone match
     let lead = null
     if (conversation.leadId) {
       lead = await prisma.lead.findUnique({
         where: { id: conversation.leadId },
-        include: { assignedTo: { select: { id: true, name: true } } },
+        include: {
+          assignedTo: { select: { id: true, name: true } },
+          tasks: {
+            orderBy: { dueDate: "asc" },
+            select: { id: true, title: true, status: true, dueDate: true, assignedTo: { select: { name: true } } },
+          },
+        },
       })
     }
 
@@ -31,7 +36,13 @@ export async function GET(
       const normalized = conversation.phoneNumber.replace(/\D/g, "")
       lead = await prisma.lead.findFirst({
         where: { phone: { contains: normalized } },
-        include: { assignedTo: { select: { id: true, name: true } } },
+        include: {
+          assignedTo: { select: { id: true, name: true } },
+          tasks: {
+            orderBy: { dueDate: "asc" },
+            select: { id: true, title: true, status: true, dueDate: true, assignedTo: { select: { name: true } } },
+          },
+        },
         orderBy: { createdAt: "desc" },
       })
     }
@@ -42,7 +53,7 @@ export async function GET(
       orderBy: { name: "asc" },
     })
 
-    return Response.json({ lead, users })
+    return Response.json({ lead, users, contactName: conversation.contactName })
   } catch (error) {
     console.error("[GET /api/conversations/[id]/lead]", error)
     return Response.json({ error: "Internal server error" }, { status: 500 })
