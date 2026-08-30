@@ -7,11 +7,13 @@ import {
   ChevronUp, ChevronDown,
 } from "lucide-react"
 import { MessageBubble } from "@/components/chat/message-bubble"
+import { ContactPanel } from "@/components/chat/contact-panel"
 import type { Conversation, Message } from "@/types/models"
 
 interface ChatWindowProps {
   conversationId: string
   conversation: Conversation
+  photoUrl?: string | null
   onConversationUpdate?: () => void
   onDelete?: () => void
 }
@@ -19,6 +21,7 @@ interface ChatWindowProps {
 export function ChatWindow({
   conversationId,
   conversation,
+  photoUrl,
   onConversationUpdate,
   onDelete,
 }: ChatWindowProps) {
@@ -28,6 +31,9 @@ export function ChatWindow({
   const [queuePaused, setQueuePaused] = useState(false)
   const [queuePendingCount, setQueuePendingCount] = useState(0)
   const [dailyLimitReached, setDailyLimitReached] = useState(false)
+
+  // Contact panel
+  const [contactPanelOpen, setContactPanelOpen] = useState(false)
 
   // Name editing
   const [editingName, setEditingName] = useState(false)
@@ -245,7 +251,8 @@ export function ChatWindow({
   // ── Render ──
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-row overflow-hidden">
+    <div className="flex flex-1 flex-col min-w-0">
 
       {/* ── Header ── */}
       <div className="shrink-0 border-b border-gray-700/50 px-4 py-3">
@@ -288,8 +295,12 @@ export function ChatWindow({
         ) : (
           /* Normal header */
           <div className="flex items-center gap-3">
-            {/* Name + phone */}
-            <div className="flex-1 min-w-0">
+            {/* Name + phone — click opens contact panel */}
+            <div
+              className="flex-1 min-w-0 cursor-pointer group/header"
+              onClick={() => !editingName && setContactPanelOpen((v) => !v)}
+              title="Ver detalhes do contato"
+            >
               {editingName ? (
                 <div className="flex items-center gap-2">
                   <input
@@ -318,7 +329,7 @@ export function ChatWindow({
                   </button>
                 </div>
               )}
-              <p className="text-xs text-gray-500">{conversation.phoneNumber}</p>
+              <p className="text-xs text-gray-500 group-hover/header:text-gray-400 transition-colors">{conversation.phoneNumber}</p>
             </div>
 
             {/* Action buttons */}
@@ -467,6 +478,18 @@ export function ChatWindow({
           </button>
         </form>
       </div>
+    </div>
+
+    {/* ── Contact panel ── */}
+    {contactPanelOpen && (
+      <ContactPanel
+        conversationId={conversationId}
+        name={resolvedName}
+        phone={conversation.phoneNumber}
+        photoUrl={photoUrl}
+        onClose={() => setContactPanelOpen(false)}
+      />
+    )}
     </div>
   )
 }

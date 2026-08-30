@@ -378,6 +378,7 @@ export default function ChatPage() {
           <ChatWindow
             conversationId={selectedConversation.id}
             conversation={selectedConversation}
+            photoUrl={profilePhotos[selectedConversation.id]}
             onConversationUpdate={fetchConversations}
             onDelete={() => { setSelectedId(null); fetchConversations() }}
           />

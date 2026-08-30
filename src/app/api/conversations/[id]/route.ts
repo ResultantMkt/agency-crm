@@ -9,6 +9,7 @@ const patchSchema = z.object({
   pinned: z.boolean().optional(),
   favorite: z.boolean().optional(),
   pinnedMessageId: z.string().nullable().optional(),
+  leadId: z.string().nullable().optional(),
 })
 
 export async function PATCH(
@@ -36,6 +37,7 @@ export async function PATCH(
     if (parsed.data.pinned !== undefined) data.pinned = parsed.data.pinned
     if (parsed.data.favorite !== undefined) data.favorite = parsed.data.favorite
     if (parsed.data.pinnedMessageId !== undefined) data.pinnedMessageId = parsed.data.pinnedMessageId
+    if (parsed.data.leadId !== undefined) data.leadId = parsed.data.leadId
 
     const conversation = await prisma.conversation.update({ where: { id }, data })
     return Response.json(conversation)
