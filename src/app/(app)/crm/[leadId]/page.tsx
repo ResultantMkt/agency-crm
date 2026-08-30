@@ -1,13 +1,14 @@
 import type { Metadata } from "next"
 import { notFound, redirect } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, Calendar, User, Phone, DollarSign, Clock, CheckCircle2, Circle, MessageSquare } from "lucide-react"
+import { ArrowLeft, Clock, CheckCircle2, Circle, MessageSquare } from "lucide-react"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { Badge } from "@/components/ui/badge"
-import { formatCurrency, formatDate, cn } from "@/lib/utils"
-import type { Lead, LeadHistory, Task, LeadStage, LeadSource } from "@/types/models"
+import { formatDate, cn } from "@/lib/utils"
+import type { Lead, LeadHistory, Task, LeadStage, User } from "@/types/models"
 import { LeadDetailClient } from "./lead-detail-client"
+import { LeadInfoClient } from "./lead-info-client"
 
 export const metadata: Metadata = {
   title: "Detalhe do Lead — Agency CRM",
@@ -22,13 +23,6 @@ const STAGE_LABELS: Record<LeadStage, string> = {
   PROPOSAL_SENT: "Proposta Enviada",
   CLOSED: "Fechamento",
   LOST: "Perdido",
-}
-
-const SOURCE_LABELS: Record<LeadSource, string> = {
-  TRAFFIC: "Tráfego pago",
-  PROSPECTING: "Prospecção ativa",
-  REFERRAL: "Indicação",
-  OTHER: "Outro",
 }
 
 const STAGE_COLORS: Record<LeadStage, string> = {
@@ -52,26 +46,32 @@ export default async function LeadDetailPage({
 
   const { leadId } = await params
 
-  const rawLead = await prisma.lead.findUnique({
-    where: { id: leadId },
-    include: {
-      assignedTo: { select: { name: true, email: true } },
-      history: {
-        include: { changedBy: { select: { name: true } } },
-        orderBy: { createdAt: "desc" },
+  const [rawLead, rawUsers] = await Promise.all([
+    prisma.lead.findUnique({
+      where: { id: leadId },
+      include: {
+        assignedTo: { select: { name: true, email: true } },
+        history: {
+          include: { changedBy: { select: { name: true } } },
+          orderBy: { createdAt: "desc" },
+        },
+        tasks: {
+          include: { assignedTo: { select: { name: true } } },
+          orderBy: { createdAt: "desc" },
+        },
       },
-      tasks: {
-        include: { assignedTo: { select: { name: true } } },
-        orderBy: { createdAt: "desc" },
-      },
-    },
-  })
+    }),
+    prisma.user.findMany({
+      where: { active: true },
+      select: { id: true, name: true, email: true, role: true },
+      orderBy: { name: "asc" },
+    }),
+  ])
 
   if (!rawLead) notFound()
 
-  const lead: Lead & { history: LeadHistory[]; tasks: Task[] } = JSON.parse(
-    JSON.stringify(rawLead)
-  )
+  const lead: Lead & { history: LeadHistory[]; tasks: Task[] } = JSON.parse(JSON.stringify(rawLead))
+  const users: User[] = JSON.parse(JSON.stringify(rawUsers))
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -113,31 +113,8 @@ export default async function LeadDetailPage({
         </span>
       </div>
 
-      {/* Info cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <InfoCard
-          icon={<Phone className="h-4 w-4" />}
-          label="Origem"
-          value={SOURCE_LABELS[lead.source]}
-        />
-        {lead.estimatedValue && (
-          <InfoCard
-            icon={<DollarSign className="h-4 w-4" />}
-            label="Valor estimado"
-            value={formatCurrency(parseFloat(lead.estimatedValue))}
-          />
-        )}
-        <InfoCard
-          icon={<User className="h-4 w-4" />}
-          label="Responsável"
-          value={lead.assignedTo?.name ?? "Não atribuído"}
-        />
-        <InfoCard
-          icon={<Calendar className="h-4 w-4" />}
-          label="Criado em"
-          value={formatDate(lead.createdAt)}
-        />
-      </div>
+      {/* Info cards (3 editáveis + Criado em readonly) */}
+      <LeadInfoClient lead={lead} users={users} />
 
       {/* Notas (edição inline — client component) */}
       <LeadDetailClient lead={lead} />
@@ -245,26 +222,6 @@ export default async function LeadDetailPage({
           </ul>
         )}
       </section>
-    </div>
-  )
-}
-
-function InfoCard({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode
-  label: string
-  value: string
-}) {
-  return (
-    <div className="bg-gray-800/60 border border-gray-700/50 rounded-lg px-4 py-3">
-      <div className="flex items-center gap-2 text-gray-400 mb-1">
-        {icon}
-        <span className="text-xs">{label}</span>
-      </div>
-      <p className="text-sm font-medium text-white truncate">{value}</p>
     </div>
   )
 }

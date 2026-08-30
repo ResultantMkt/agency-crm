@@ -128,6 +128,10 @@ export function KanbanBoard({ initialLeads, users }: KanbanBoardProps) {
     setLeads((prev) => prev.filter((l) => l.id !== leadId))
   }
 
+  function handleLeadUpdated(leadId: string, updates: Partial<Lead>) {
+    setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, ...updates } : l)))
+  }
+
   function handleImportSuccess(allLeads: Lead[]) {
     setLeads(allLeads)
     setImportOpen(false)
@@ -156,7 +160,9 @@ export function KanbanBoard({ initialLeads, users }: KanbanBoardProps) {
               stage={stage}
               label={label}
               leads={getLeadsForStage(stage)}
+              users={users}
               onDeleteLead={handleLeadDeleted}
+              onUpdateLead={handleLeadUpdated}
             />
           ))}
         </div>

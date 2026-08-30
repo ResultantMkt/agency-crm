@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { formatCurrency } from "@/lib/utils"
-import type { Lead, LeadSource, TaskStatus } from "@/types/models"
+import type { Lead, LeadSource, LeadSource as LeadSourceType, TaskStatus, User as UserType } from "@/types/models"
 
 const SOURCE_LABELS: Record<LeadSource, string> = {
   TRAFFIC: "Tráfego",
@@ -24,6 +24,13 @@ const SOURCE_LABELS: Record<LeadSource, string> = {
   REFERRAL: "Indicação",
   OTHER: "Outro",
 }
+
+const SOURCE_OPTIONS: { value: LeadSourceType; label: string }[] = [
+  { value: "TRAFFIC", label: "Tráfego" },
+  { value: "PROSPECTING", label: "Prospecção" },
+  { value: "REFERRAL", label: "Indicação" },
+  { value: "OTHER", label: "Outro" },
+]
 
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr)
@@ -76,11 +83,21 @@ function getMostUrgentTask(
 
 interface LeadCardProps {
   lead: Lead
+  users?: UserType[]
   onDelete?: (leadId: string) => void
+  onUpdate?: (leadId: string, updates: Partial<Lead>) => void
 }
 
-export function LeadCard({ lead, onDelete }: LeadCardProps) {
+type CardEditingField = "source" | "assignedTo" | null
+
+export function LeadCard({ lead, users = [], onDelete, onUpdate }: LeadCardProps) {
   const router = useRouter()
+
+  // Inline edit state
+  const [editingField, setEditingField] = useState<CardEditingField>(null)
+  const editRef = useRef<HTMLDivElement>(null)
+
+  // Delete state
   const [menuOpen, setMenuOpen] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -98,6 +115,7 @@ export function LeadCard({ lead, onDelete }: LeadCardProps) {
     zIndex: isDragging ? 999 : undefined,
   }
 
+  // Close 3-dot menu on outside click
   useEffect(() => {
     if (!menuOpen) return
     function handleOutside(e: MouseEvent) {
@@ -109,7 +127,40 @@ export function LeadCard({ lead, onDelete }: LeadCardProps) {
     return () => document.removeEventListener("mousedown", handleOutside)
   }, [menuOpen])
 
+  // Close inline edit on outside click
+  useEffect(() => {
+    if (!editingField) return
+    function handleOutside(e: MouseEvent) {
+      if (editRef.current && !editRef.current.contains(e.target as Node)) {
+        setEditingField(null)
+      }
+    }
+    document.addEventListener("mousedown", handleOutside)
+    return () => document.removeEventListener("mousedown", handleOutside)
+  }, [editingField])
+
   const urgentTask = getMostUrgentTask(lead.tasks)
+  const assignedUser = users.find((u) => u.id === lead.assignedToId)
+  const displayAssignedName = assignedUser?.name ?? lead.assignedTo?.name ?? null
+
+  async function patchField(data: Partial<Lead> & Record<string, unknown>) {
+    const res = await fetch(`/api/leads/${lead.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    })
+    if (res.ok) onUpdate?.(lead.id, data as Partial<Lead>)
+  }
+
+  async function handleSourceChange(newSource: LeadSourceType) {
+    setEditingField(null)
+    await patchField({ source: newSource })
+  }
+
+  async function handleAssignedToChange(newId: string | null) {
+    setEditingField(null)
+    await patchField({ assignedToId: newId ?? undefined })
+  }
 
   function handleClick(e: React.MouseEvent) {
     if (isDragging) return
@@ -178,18 +229,40 @@ export function LeadCard({ lead, onDelete }: LeadCardProps) {
           </div>
         </div>
 
-        {/* Valor estimado */}
+        {/* Valor estimado (readonly no card) */}
         {lead.estimatedValue && (
           <p className="text-sm font-medium text-emerald-400 mb-2">
             {formatCurrency(parseFloat(lead.estimatedValue))}
           </p>
         )}
 
-        {/* Source badge */}
-        <div className="mb-3">
-          <Badge variant="outline" className="text-xs">
-            {SOURCE_LABELS[lead.source]}
-          </Badge>
+        {/* Source badge — clicável */}
+        <div ref={editingField === "source" ? editRef : undefined} className="mb-3">
+          {editingField === "source" ? (
+            <select
+              autoFocus
+              className="text-xs bg-gray-700 text-white rounded px-1.5 py-0.5 border border-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500 w-full"
+              value={lead.source}
+              onChange={(e) => handleSourceChange(e.target.value as LeadSourceType)}
+              onBlur={() => setEditingField(null)}
+              onClick={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              {SOURCE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          ) : (
+            <Badge
+              variant="outline"
+              className="text-xs cursor-pointer hover:border-blue-500/60 hover:text-blue-400 transition-colors"
+              onClick={(e) => { e.stopPropagation(); setEditingField("source") }}
+              onPointerDown={(e) => e.stopPropagation()}
+              title="Clique para editar origem"
+            >
+              {SOURCE_LABELS[lead.source]}
+            </Badge>
+          )}
         </div>
 
         {/* Tarefa vinculada */}
@@ -222,22 +295,53 @@ export function LeadCard({ lead, onDelete }: LeadCardProps) {
 
         {/* Footer */}
         <div className="flex items-center justify-between mt-2">
-          {lead.assignedTo ? (
-            <div className="flex items-center gap-1.5">
-              <div className="h-6 w-6 rounded-full bg-blue-600 flex items-center justify-center text-xs font-semibold text-white shrink-0">
-                {getInitials(lead.assignedTo.name)}
-              </div>
-              <span className="text-xs text-gray-400 truncate max-w-[80px]">
-                {lead.assignedTo.name.split(" ")[0]}
-              </span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1 text-gray-600">
-              <User className="h-3.5 w-3.5" />
-              <span className="text-xs">Sem responsável</span>
-            </div>
-          )}
+          {/* Responsável — clicável */}
+          <div
+            ref={editingField === "assignedTo" ? editRef : undefined}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {editingField === "assignedTo" ? (
+              <select
+                autoFocus
+                className="text-xs bg-gray-700 text-white rounded px-1.5 py-0.5 border border-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500 max-w-[130px]"
+                value={lead.assignedToId ?? ""}
+                onChange={(e) => handleAssignedToChange(e.target.value || null)}
+                onBlur={() => setEditingField(null)}
+              >
+                <option value="">Sem responsável</option>
+                {users.map((u) => (
+                  <option key={u.id} value={u.id}>{u.name.split(" ")[0]}</option>
+                ))}
+              </select>
+            ) : displayAssignedName ? (
+              <button
+                type="button"
+                className="flex items-center gap-1.5 group"
+                onClick={() => setEditingField("assignedTo")}
+                title="Clique para editar responsável"
+              >
+                <div className="h-6 w-6 rounded-full bg-blue-600 flex items-center justify-center text-xs font-semibold text-white shrink-0 group-hover:ring-1 group-hover:ring-blue-400 transition-all">
+                  {getInitials(displayAssignedName)}
+                </div>
+                <span className="text-xs text-gray-400 truncate max-w-[80px] group-hover:text-blue-400 transition-colors">
+                  {displayAssignedName.split(" ")[0]}
+                </span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="flex items-center gap-1 text-gray-600 hover:text-gray-400 transition-colors"
+                onClick={() => setEditingField("assignedTo")}
+                title="Clique para atribuir responsável"
+              >
+                <User className="h-3.5 w-3.5" />
+                <span className="text-xs">Sem responsável</span>
+              </button>
+            )}
+          </div>
 
+          {/* Data de criação — somente leitura */}
           <div className="flex items-center gap-1 text-gray-500">
             <Calendar className="h-3 w-3" />
             <span className="text-xs">{formatDate(lead.createdAt)}</span>

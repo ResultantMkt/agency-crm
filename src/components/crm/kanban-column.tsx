@@ -4,17 +4,19 @@ import { useDroppable } from "@dnd-kit/core"
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { cn } from "@/lib/utils"
 import { LeadCard } from "./lead-card"
-import type { Lead, LeadStage } from "@/types/models"
+import type { Lead, LeadStage, User } from "@/types/models"
 
 interface KanbanColumnProps {
   stage: LeadStage
   label: string
   leads: Lead[]
+  users: User[]
   color?: string
   onDeleteLead?: (leadId: string) => void
+  onUpdateLead?: (leadId: string, updates: Partial<Lead>) => void
 }
 
-export function KanbanColumn({ stage, label, leads, color, onDeleteLead }: KanbanColumnProps) {
+export function KanbanColumn({ stage, label, leads, users, color, onDeleteLead, onUpdateLead }: KanbanColumnProps) {
   const { isOver, setNodeRef } = useDroppable({ id: stage })
 
   const headerClass =
@@ -65,7 +67,15 @@ export function KanbanColumn({ stage, label, leads, color, onDeleteLead }: Kanba
               Arraste um lead aqui
             </div>
           ) : (
-            leads.map((lead) => <LeadCard key={lead.id} lead={lead} onDelete={onDeleteLead} />)
+            leads.map((lead) => (
+              <LeadCard
+                key={lead.id}
+                lead={lead}
+                users={users}
+                onDelete={onDeleteLead}
+                onUpdate={onUpdateLead}
+              />
+            ))
           )}
         </SortableContext>
       </div>
