@@ -124,6 +124,10 @@ export function KanbanBoard({ initialLeads, users }: KanbanBoardProps) {
     setLeads((prev) => [lead, ...prev])
   }
 
+  function handleLeadDeleted(leadId: string) {
+    setLeads((prev) => prev.filter((l) => l.id !== leadId))
+  }
+
   function handleImportSuccess(allLeads: Lead[]) {
     setLeads(allLeads)
     setImportOpen(false)
@@ -152,6 +156,7 @@ export function KanbanBoard({ initialLeads, users }: KanbanBoardProps) {
               stage={stage}
               label={label}
               leads={getLeadsForStage(stage)}
+              onDeleteLead={handleLeadDeleted}
             />
           ))}
         </div>

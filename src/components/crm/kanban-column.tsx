@@ -11,9 +11,10 @@ interface KanbanColumnProps {
   label: string
   leads: Lead[]
   color?: string
+  onDeleteLead?: (leadId: string) => void
 }
 
-export function KanbanColumn({ stage, label, leads, color }: KanbanColumnProps) {
+export function KanbanColumn({ stage, label, leads, color, onDeleteLead }: KanbanColumnProps) {
   const { isOver, setNodeRef } = useDroppable({ id: stage })
 
   const headerClass =
@@ -64,7 +65,7 @@ export function KanbanColumn({ stage, label, leads, color }: KanbanColumnProps) 
               Arraste um lead aqui
             </div>
           ) : (
-            leads.map((lead) => <LeadCard key={lead.id} lead={lead} />)
+            leads.map((lead) => <LeadCard key={lead.id} lead={lead} onDelete={onDeleteLead} />)
           )}
         </SortableContext>
       </div>
