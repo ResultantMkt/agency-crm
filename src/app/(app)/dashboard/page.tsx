@@ -59,9 +59,10 @@ function MetricCard({
 const FUNNEL_STAGES = [
   "LEAD",
   "MQL",
-  "MEETING_SCHEDULED",
-  "MEETING_DONE",
-  "PROPOSAL",
+  "SCREENING_SCHEDULED",
+  "SCREENING_DONE",
+  "CLOSING_MEETING",
+  "PROPOSAL_SENT",
   "CLOSED",
   "LOST",
 ] as const
@@ -69,10 +70,11 @@ const FUNNEL_STAGES = [
 const STAGE_LABELS: Record<string, string> = {
   LEAD: "Lead",
   MQL: "MQL",
-  MEETING_SCHEDULED: "Reunião Agendada",
-  MEETING_DONE: "Reunião Realizada",
-  PROPOSAL: "Proposta",
-  CLOSED: "Fechado",
+  SCREENING_SCHEDULED: "Triagem Agendada",
+  SCREENING_DONE: "Triagem Realizada",
+  CLOSING_MEETING: "Reunião de Fechamento",
+  PROPOSAL_SENT: "Proposta Enviada",
+  CLOSED: "Fechamento",
   LOST: "Perdido",
 }
 
@@ -192,7 +194,7 @@ export default async function DashboardPage() {
 
   const leadCount = funnelMap["LEAD"] ?? 0
   const mqlCount = funnelMap["MQL"] ?? 0
-  const meetingCount = funnelMap["MEETING_SCHEDULED"] ?? 0
+  const meetingCount = funnelMap["SCREENING_SCHEDULED"] ?? 0
   const closedCount = funnelMap["CLOSED"] ?? 0
 
   const convLeadToMql = leadCount > 0 ? ((mqlCount / leadCount) * 100).toFixed(0) : "0"

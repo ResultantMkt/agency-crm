@@ -1,4 +1,4 @@
-export type LeadStage = "LEAD" | "MQL" | "MEETING_SCHEDULED" | "MEETING_DONE" | "PROPOSAL" | "CLOSED" | "LOST"
+export type LeadStage = "LEAD" | "MQL" | "SCREENING_SCHEDULED" | "SCREENING_DONE" | "CLOSING_MEETING" | "PROPOSAL_SENT" | "CLOSED" | "LOST"
 export type LeadSource = "TRAFFIC" | "PROSPECTING" | "REFERRAL" | "OTHER"
 export type ClientStatus = "ACTIVE" | "CHURN" | "NOT_RENEWED"
 export type TaskStatus = "PENDING" | "DONE"

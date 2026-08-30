@@ -11,10 +11,11 @@ import type { Lead, LeadStage, User } from "@/types/models"
 const STAGES: { stage: LeadStage; label: string }[] = [
   { stage: "LEAD", label: "Lead" },
   { stage: "MQL", label: "MQL" },
-  { stage: "MEETING_SCHEDULED", label: "Reunião Agendada" },
-  { stage: "MEETING_DONE", label: "Reunião Realizada" },
-  { stage: "PROPOSAL", label: "Proposta" },
-  { stage: "CLOSED", label: "Fechado" },
+  { stage: "SCREENING_SCHEDULED", label: "Triagem Agendada" },
+  { stage: "SCREENING_DONE", label: "Triagem Realizada" },
+  { stage: "CLOSING_MEETING", label: "Reunião de Fechamento" },
+  { stage: "PROPOSAL_SENT", label: "Proposta Enviada" },
+  { stage: "CLOSED", label: "Fechamento" },
   { stage: "LOST", label: "Perdido" },
 ]
 

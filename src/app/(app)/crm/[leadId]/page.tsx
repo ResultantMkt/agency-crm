@@ -16,10 +16,11 @@ export const metadata: Metadata = {
 const STAGE_LABELS: Record<LeadStage, string> = {
   LEAD: "Lead",
   MQL: "MQL",
-  MEETING_SCHEDULED: "Reunião Agendada",
-  MEETING_DONE: "Reunião Realizada",
-  PROPOSAL: "Proposta",
-  CLOSED: "Fechado",
+  SCREENING_SCHEDULED: "Triagem Agendada",
+  SCREENING_DONE: "Triagem Realizada",
+  CLOSING_MEETING: "Reunião de Fechamento",
+  PROPOSAL_SENT: "Proposta Enviada",
+  CLOSED: "Fechamento",
   LOST: "Perdido",
 }
 
@@ -33,9 +34,10 @@ const SOURCE_LABELS: Record<LeadSource, string> = {
 const STAGE_COLORS: Record<LeadStage, string> = {
   LEAD: "bg-gray-500/20 text-gray-400",
   MQL: "bg-blue-500/20 text-blue-400",
-  MEETING_SCHEDULED: "bg-yellow-500/20 text-yellow-400",
-  MEETING_DONE: "bg-orange-500/20 text-orange-400",
-  PROPOSAL: "bg-purple-500/20 text-purple-400",
+  SCREENING_SCHEDULED: "bg-yellow-500/20 text-yellow-400",
+  SCREENING_DONE: "bg-orange-500/20 text-orange-400",
+  CLOSING_MEETING: "bg-violet-500/20 text-violet-400",
+  PROPOSAL_SENT: "bg-purple-500/20 text-purple-400",
   CLOSED: "bg-emerald-500/20 text-emerald-400",
   LOST: "bg-red-500/20 text-red-400",
 }

@@ -5,20 +5,34 @@ import { Pencil, Check, X, CalendarDays, ChevronLeft, ChevronRight } from "lucid
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+interface ChannelMetrics {
+  source: string
+  label: string
+  investment: number
+  leads: number
+  mql: number
+  screeningScheduled: number
+  screeningDone: number
+  closingMeeting: number
+  closings: number
+  closingValue: number
+  costPerLead: number | null
+  costPerMql: number | null
+  costPerScreeningScheduled: number | null
+  costPerScreeningDone: number | null
+  costPerClosingMeeting: number | null
+  cac: number | null
+  ltv: number
+  roas: number | null
+  rateLeadToMql: number
+  rateMqlToScreening: number
+  rateClosingMeetingToClosing: number
+  rateLeadToClosing: number
+}
+
 interface Metrics {
   period: { dateFrom: string; dateTo: string; key: string }
-  funnel: Record<string, number>
-  acquisition: {
-    newClients: number
-    newMrr: number
-    trafficInvestment: number
-    cac: number | null
-  }
-  conversionRates: {
-    leadToMql: number
-    mqlToMeeting: number
-    meetingToClose: number
-  }
+  channels: ChannelMetrics[]
 }
 
 // ─── Date helpers ─────────────────────────────────────────────────────────────
@@ -63,21 +77,21 @@ function formatDisplayDate(s: string): string {
   return `${d}/${m}/${y}`
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const STAGE_LABELS: Record<string, string> = {
-  LEAD: "Leads",
-  MQL: "MQL",
-  MEETING_SCHEDULED: "Ag. Reunião",
-  MEETING_DONE: "Reunião Feita",
-  PROPOSAL: "Propostas",
-  CLOSED: "Fechados",
-  LOST: "Perdidos",
+function fmtRate(value: number): string {
+  return `${value.toFixed(1)}%`
 }
 
-const STAGE_ORDER = [
-  "LEAD", "MQL", "MEETING_SCHEDULED", "MEETING_DONE", "PROPOSAL", "CLOSED", "LOST",
-] as const
+function fmtRoas(value: number | null): string {
+  if (value === null) return "—"
+  return `${value.toFixed(2)}x`
+}
+
+function fmtCost(value: number | null): string {
+  if (value === null) return "—"
+  return formatBRL(value)
+}
+
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const MONTH_NAMES_PT = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -215,7 +229,6 @@ function DateRangePicker({
   const [selectingSecond, setSelectingSecond] = useState(false)
   const [hoverDate, setHoverDate] = useState<string | null>(null)
 
-  // Left calendar shows the month of dateFrom (or prev month if same as current)
   const initViewDate = () => {
     const d = dateFrom ? new Date(dateFrom + "T00:00:00") : today
     return { year: d.getFullYear(), month: d.getMonth() + 1 }
@@ -229,9 +242,7 @@ function DateRangePicker({
 
   useEffect(() => {
     function handleOutsideClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false)
-      }
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
     }
     if (open) document.addEventListener("mousedown", handleOutsideClick)
     return () => document.removeEventListener("mousedown", handleOutsideClick)
@@ -303,7 +314,6 @@ function DateRangePicker({
 
       {open && (
         <div className="absolute right-0 top-full z-50 mt-2 flex overflow-hidden rounded-xl border border-gray-700 bg-gray-900 shadow-2xl">
-          {/* Shortcuts */}
           <div className="w-44 border-r border-gray-700 py-2">
             {shortcuts.map((s) => {
               const active = s.from === dateFrom && s.to === dateTo
@@ -325,9 +335,7 @@ function DateRangePicker({
             })}
           </div>
 
-          {/* Calendar */}
           <div className="flex flex-col p-4">
-            {/* Month navigation */}
             <div className="mb-3 flex items-center justify-between">
               <button
                 type="button"
@@ -378,7 +386,6 @@ function DateRangePicker({
               />
             </div>
 
-            {/* Selected range display + apply */}
             <div className="mt-4 flex items-center justify-between border-t border-gray-700 pt-4">
               <span className="text-sm text-gray-400">
                 {pendingFrom && pendingTo
@@ -412,26 +419,34 @@ function DateRangePicker({
   )
 }
 
-// ─── Metric cards ─────────────────────────────────────────────────────────────
+// ─── Metric cell ──────────────────────────────────────────────────────────────
 
-function MetricCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
+function Cell({ label, value, highlight }: { label: string; value: string; highlight?: "green" | "yellow" | "red" }) {
+  const valueColor =
+    highlight === "green" ? "text-emerald-400" :
+    highlight === "yellow" ? "text-yellow-400" :
+    highlight === "red" ? "text-red-400" :
+    "text-white"
   return (
-    <div className="rounded-lg border border-gray-700/50 bg-gray-800/50 p-5">
-      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{label}</p>
-      <p className="mt-2 text-2xl font-bold text-white">{value}</p>
-      {sub && <p className="mt-1 text-xs text-gray-500">{sub}</p>}
+    <div className="flex flex-col gap-0.5">
+      <span className="text-[10px] font-medium uppercase tracking-wide text-gray-500 leading-none">{label}</span>
+      <span className={`text-sm font-semibold ${valueColor}`}>{value}</span>
     </div>
   )
 }
 
-function InvestmentCard({
+// ─── Investment inline edit ───────────────────────────────────────────────────
+
+function InvestmentInline({
+  source,
   periodKey,
   value,
   onSave,
 }: {
+  source: string
   periodKey: string
   value: number
-  onSave: (v: number) => Promise<void>
+  onSave: (source: string, value: number) => Promise<void>
 }) {
   const [editing, setEditing] = useState(false)
   const [input, setInput] = useState("")
@@ -443,89 +458,115 @@ function InvestmentCard({
     const parsed = parseFloat(input.replace(",", "."))
     if (isNaN(parsed) || parsed < 0) { setEditing(false); return }
     setSaving(true)
-    await onSave(parsed)
+    await onSave(source, parsed)
     setSaving(false)
     setEditing(false)
   }
 
+  if (editing) {
+    return (
+      <div className="flex items-center gap-1.5">
+        <span className="text-xs text-gray-400">R$</span>
+        <input
+          type="number"
+          min="0"
+          step="0.01"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") setEditing(false) }}
+          className="w-28 rounded border border-gray-600 bg-gray-900 px-2 py-0.5 text-sm font-semibold text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+          autoFocus
+        />
+        <button onClick={save} disabled={saving} className="rounded p-0.5 text-emerald-400 hover:bg-emerald-900/30">
+          <Check className="h-3.5 w-3.5" />
+        </button>
+        <button onClick={() => setEditing(false)} className="rounded p-0.5 text-red-400 hover:bg-red-900/30">
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    )
+  }
+
   return (
-    <div className="rounded-lg border border-gray-700/50 bg-gray-800/50 p-5">
-      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-        Investimento em Tráfego
-      </p>
-      {editing ? (
-        <div className="mt-2 flex items-center gap-2">
-          <span className="text-gray-400">R$</span>
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") setEditing(false) }}
-            className="w-32 rounded border border-gray-600 bg-gray-900 px-2 py-1 text-lg font-bold text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-            autoFocus
+    <div className="group flex items-center gap-1.5">
+      <span className="text-sm font-semibold text-white">{formatBRL(value)}</span>
+      <button
+        onClick={() => { setInput(String(value)); setEditing(true) }}
+        className="rounded p-0.5 text-gray-600 opacity-0 transition-opacity group-hover:opacity-100 hover:text-gray-300"
+      >
+        <Pencil className="h-3 w-3" />
+      </button>
+    </div>
+  )
+}
+
+// ─── Channel block ────────────────────────────────────────────────────────────
+
+function ChannelBlock({
+  ch,
+  periodKey,
+  onSaveInvestment,
+}: {
+  ch: ChannelMetrics
+  periodKey: string
+  onSaveInvestment: (source: string, value: number) => Promise<void>
+}) {
+  return (
+    <div className="rounded-xl border border-gray-700/50 bg-gray-800/40 overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 py-3 border-b border-gray-700/50 bg-gray-800/60">
+        <h3 className="text-sm font-semibold text-white">{ch.label}</h3>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-medium uppercase tracking-wide text-gray-500">Investimento</span>
+          <InvestmentInline
+            source={ch.source}
+            periodKey={periodKey}
+            value={ch.investment}
+            onSave={onSaveInvestment}
           />
-          <button onClick={save} disabled={saving} className="rounded p-1 text-emerald-400 hover:bg-emerald-900/30">
-            <Check className="h-4 w-4" />
-          </button>
-          <button onClick={() => setEditing(false)} className="rounded p-1 text-red-400 hover:bg-red-900/30">
-            <X className="h-4 w-4" />
-          </button>
         </div>
-      ) : (
-        <div className="group mt-2 flex items-center gap-2">
-          <p className="text-2xl font-bold text-white">{formatBRL(value)}</p>
-          <button
-            onClick={() => { setInput(String(value)); setEditing(true) }}
-            className="rounded p-1 text-gray-600 opacity-0 transition-opacity group-hover:opacity-100 hover:text-gray-300"
-          >
-            <Pencil className="h-3.5 w-3.5" />
-          </button>
+      </div>
+
+      <div className="p-5 space-y-5">
+        {/* Funil */}
+        <div>
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-gray-600">Funil</p>
+          <div className="grid grid-cols-4 gap-x-6 gap-y-3 sm:grid-cols-7">
+            <Cell label="Leads" value={String(ch.leads)} />
+            <Cell label="MQL" value={String(ch.mql)} />
+            <Cell label="Triag. Ag." value={String(ch.screeningScheduled)} />
+            <Cell label="Triag. Real." value={String(ch.screeningDone)} />
+            <Cell label="Reun. Fech." value={String(ch.closingMeeting)} />
+            <Cell label="Fechamentos" value={String(ch.closings)} highlight="green" />
+            <Cell label="Valor Fech." value={formatBRL(ch.closingValue)} highlight="green" />
+          </div>
         </div>
-      )}
-      <p className="mt-1 text-xs text-gray-500">Clique no lápis para editar</p>
-    </div>
-  )
-}
 
-function StageCard({ label, count }: { label: string; count: number }) {
-  return (
-    <div className="rounded-lg border border-gray-700/50 bg-gray-800/50 p-5">
-      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{label}</p>
-      <p className="mt-2 text-3xl font-bold text-white">{count}</p>
-    </div>
-  )
-}
+        {/* Custos */}
+        <div>
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-gray-600">Custos</p>
+          <div className="grid grid-cols-3 gap-x-6 gap-y-3 sm:grid-cols-6">
+            <Cell label="Custo/Lead" value={fmtCost(ch.costPerLead)} />
+            <Cell label="Custo/MQL" value={fmtCost(ch.costPerMql)} />
+            <Cell label="Custo/Triag.Ag." value={fmtCost(ch.costPerScreeningScheduled)} />
+            <Cell label="Custo/Triag.Real." value={fmtCost(ch.costPerScreeningDone)} />
+            <Cell label="Custo/Reun.Fech." value={fmtCost(ch.costPerClosingMeeting)} />
+            <Cell label="CAC" value={fmtCost(ch.cac)} />
+          </div>
+        </div>
 
-function FunnelBar({ label, count, maxCount }: { label: string; count: number; maxCount: number }) {
-  const pct = maxCount > 0 ? (count / maxCount) * 100 : 0
-  return (
-    <div>
-      <div className="mb-1.5 flex items-center justify-between">
-        <span className="text-sm font-medium text-gray-300">{label}</span>
-        <span className="text-sm text-gray-500">
-          {count} <span className="text-gray-600">({pct.toFixed(0)}%)</span>
-        </span>
-      </div>
-      <div className="h-3 w-full overflow-hidden rounded-full bg-gray-700">
-        <div className="h-3 rounded-full bg-blue-500 transition-all" style={{ width: `${pct}%` }} />
-      </div>
-    </div>
-  )
-}
-
-function ConversionCard({ from, to, rate }: { from: string; to: string; rate: number }) {
-  const rateColor = rate >= 50 ? "text-emerald-400" : rate >= 25 ? "text-yellow-400" : "text-red-400"
-  const barColor = rate >= 50 ? "bg-emerald-500" : rate >= 25 ? "bg-yellow-500" : "bg-red-500"
-  return (
-    <div className="rounded-lg border border-gray-700/30 bg-gray-900/50 p-5">
-      <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm font-medium text-gray-300">{from} → {to}</p>
-        <span className={`text-2xl font-bold ${rateColor}`}>{rate.toFixed(0)}%</span>
-      </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-gray-700">
-        <div className={`h-2 rounded-full transition-all ${barColor}`} style={{ width: `${Math.min(rate, 100)}%` }} />
+        {/* Taxas e Retorno */}
+        <div>
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-gray-600">Conversão & Retorno</p>
+          <div className="grid grid-cols-3 gap-x-6 gap-y-3 sm:grid-cols-6">
+            <Cell label="Lead → MQL" value={fmtRate(ch.rateLeadToMql)} />
+            <Cell label="MQL → Triagem" value={fmtRate(ch.rateMqlToScreening)} />
+            <Cell label="Fech. → Fecham." value={fmtRate(ch.rateClosingMeetingToClosing)} />
+            <Cell label="Lead → Fecham." value={fmtRate(ch.rateLeadToClosing)} />
+            <Cell label="LTV" value={formatBRL(ch.ltv)} highlight="green" />
+            <Cell label="ROAS LTV" value={fmtRoas(ch.roas)} highlight={ch.roas !== null && ch.roas >= 1 ? "green" : ch.roas !== null ? "red" : undefined} />
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -558,25 +599,18 @@ export function DashboardClient() {
     setDateTo(to)
   }
 
-  async function saveInvestment(value: number) {
+  async function saveInvestment(source: string, value: number) {
     if (!metrics) return
     await fetch("/api/dashboard/metrics", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ periodKey: metrics.period.key, value }),
+      body: JSON.stringify({ source, periodKey: metrics.period.key, value }),
     })
     await fetchMetrics(dateFrom, dateTo)
   }
 
-  const funnel = metrics?.funnel ?? {}
-  const acq = metrics?.acquisition
-  const conv = metrics?.conversionRates
-
-  const stageValues = STAGE_ORDER.map((s) => funnel[s] ?? 0)
-  const maxCount = Math.max(...stageValues, 1)
-
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       {/* Cabeçalho */}
       <div className="flex items-center justify-end">
         <DateRangePicker dateFrom={dateFrom} dateTo={dateTo} onApply={handleApply} />
@@ -585,56 +619,16 @@ export function DashboardClient() {
       {loading && <p className="text-sm text-gray-500">Carregando...</p>}
 
       {!loading && metrics && (
-        <>
-          {/* Seção 1: Aquisição */}
-          <section>
-            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
-              Aquisição
-            </h3>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              <MetricCard label="Novos Clientes" value={acq?.newClients ?? 0} sub="Leads fechados no período" />
-              <MetricCard label="Novo MRR" value={formatBRL(acq?.newMrr ?? 0)} sub="Soma dos valores estimados" />
-              <InvestmentCard periodKey={metrics.period.key} value={acq?.trafficInvestment ?? 0} onSave={saveInvestment} />
-              <MetricCard label="CAC" value={acq?.cac != null ? formatBRL(acq.cac) : "—"} sub="Investimento ÷ Novos Clientes" />
-            </div>
-          </section>
-
-          {/* Seção 2: Pipeline */}
-          <section>
-            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-500">
-              Pipeline
-            </h3>
-            <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-7">
-              {STAGE_ORDER.map((stage) => (
-                <StageCard key={stage} label={STAGE_LABELS[stage]} count={funnel[stage] ?? 0} />
-              ))}
-            </div>
-
-            <div className="rounded-lg border border-gray-700/50 bg-gray-800/50 p-6">
-              <h4 className="mb-1 text-base font-semibold text-white">Progressão do Funil</h4>
-              <p className="mb-5 text-xs text-gray-500">
-                Barras relativas ao estágio com maior volume no período
-              </p>
-              <div className="space-y-4">
-                {STAGE_ORDER.map((stage) => (
-                  <FunnelBar key={stage} label={STAGE_LABELS[stage]} count={funnel[stage] ?? 0} maxCount={maxCount} />
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* Seção 3: Taxas de Conversão */}
-          <section>
-            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
-              Taxas de Conversão
-            </h3>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <ConversionCard from="Lead" to="MQL" rate={conv?.leadToMql ?? 0} />
-              <ConversionCard from="MQL" to="Reunião" rate={conv?.mqlToMeeting ?? 0} />
-              <ConversionCard from="Reunião" to="Fechado" rate={conv?.meetingToClose ?? 0} />
-            </div>
-          </section>
-        </>
+        <div className="space-y-4">
+          {metrics.channels.map((ch) => (
+            <ChannelBlock
+              key={ch.source}
+              ch={ch}
+              periodKey={metrics.period.key}
+              onSaveInvestment={saveInvestment}
+            />
+          ))}
+        </div>
       )}
     </div>
   )

@@ -31,10 +31,11 @@ const SOURCE_OPTIONS: { value: LeadSource; label: string }[] = [
 const STAGE_OPTIONS: { value: LeadStage; label: string }[] = [
   { value: "LEAD", label: "Lead" },
   { value: "MQL", label: "MQL" },
-  { value: "MEETING_SCHEDULED", label: "Reunião Agendada" },
-  { value: "MEETING_DONE", label: "Reunião Realizada" },
-  { value: "PROPOSAL", label: "Proposta" },
-  { value: "CLOSED", label: "Fechado" },
+  { value: "SCREENING_SCHEDULED", label: "Triagem Agendada" },
+  { value: "SCREENING_DONE", label: "Triagem Realizada" },
+  { value: "CLOSING_MEETING", label: "Reunião de Fechamento" },
+  { value: "PROPOSAL_SENT", label: "Proposta Enviada" },
+  { value: "CLOSED", label: "Fechamento" },
   { value: "LOST", label: "Perdido" },
 ]
 

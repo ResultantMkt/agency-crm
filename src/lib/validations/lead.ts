@@ -8,7 +8,7 @@ export const createLeadSchema = z.object({
     .enum(["TRAFFIC", "PROSPECTING", "REFERRAL", "OTHER"])
     .default("OTHER"),
   stage: z
-    .enum(["LEAD", "MQL", "MEETING_SCHEDULED", "MEETING_DONE", "PROPOSAL", "CLOSED", "LOST"])
+    .enum(["LEAD", "MQL", "SCREENING_SCHEDULED", "SCREENING_DONE", "CLOSING_MEETING", "PROPOSAL_SENT", "CLOSED", "LOST"])
     .default("LEAD"),
   assignedToId: z.string().nullish(),
   estimatedValue: z.coerce.number().positive("Valor estimado deve ser positivo").nullish(),
@@ -17,7 +17,7 @@ export const createLeadSchema = z.object({
 
 export const updateLeadSchema = createLeadSchema.partial().extend({
   stage: z
-    .enum(["LEAD", "MQL", "MEETING_SCHEDULED", "MEETING_DONE", "PROPOSAL", "CLOSED", "LOST"])
+    .enum(["LEAD", "MQL", "SCREENING_SCHEDULED", "SCREENING_DONE", "CLOSING_MEETING", "PROPOSAL_SENT", "CLOSED", "LOST"])
     .optional(),
 })
 
