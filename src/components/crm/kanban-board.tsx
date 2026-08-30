@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useMemo } from "react"
 import { DndContext, DragEndEvent, DragStartEvent, DragOverlay, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
 import { arrayMove } from "@dnd-kit/sortable"
 import { Plus, Upload } from "lucide-react"
@@ -9,6 +9,7 @@ import { KanbanColumn } from "./kanban-column"
 import { LeadCardOverlay } from "./lead-card"
 import { LeadForm } from "./lead-form"
 import { CsvImportModal } from "./csv-import-modal"
+import { KanbanFilters, KanbanFilterState, EMPTY_FILTERS, UNASSIGNED_ID } from "./kanban-filters"
 import type { Lead, LeadStage, User } from "@/types/models"
 
 const STAGES: { stage: LeadStage; label: string }[] = [
@@ -34,6 +35,30 @@ export function KanbanBoard({ initialLeads, users }: KanbanBoardProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
   const [formOpen, setFormOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
+  const [filters, setFilters] = useState<KanbanFilterState>(EMPTY_FILTERS)
+
+  const filteredLeads = useMemo(() => {
+    return leads.filter((l) => {
+      if (filters.sources.length > 0 && !filters.sources.includes(l.source)) return false
+      if (filters.stages.length > 0 && !filters.stages.includes(l.stage)) return false
+      if (filters.assignedToIds.length > 0) {
+        const isUnassigned = !l.assignedToId
+        const matchesUnassigned = filters.assignedToIds.includes(UNASSIGNED_ID) && isUnassigned
+        const matchesUser = !isUnassigned && filters.assignedToIds.includes(l.assignedToId!)
+        if (!matchesUnassigned && !matchesUser) return false
+      }
+      if (filters.createdFrom) {
+        const from = new Date(filters.createdFrom)
+        if (new Date(l.createdAt) < from) return false
+      }
+      if (filters.createdTo) {
+        const to = new Date(filters.createdTo)
+        to.setHours(23, 59, 59, 999)
+        if (new Date(l.createdAt) > to) return false
+      }
+      return true
+    })
+  }, [leads, filters])
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -43,10 +68,10 @@ export function KanbanBoard({ initialLeads, users }: KanbanBoardProps) {
 
   const getLeadsForStage = useCallback(
     (stage: LeadStage) =>
-      leads
+      filteredLeads
         .filter((l) => l.stage === stage)
         .sort((a, b) => (a.position ?? 0) - (b.position ?? 0)),
-    [leads]
+    [filteredLeads]
   )
 
   function handleDragStart(event: DragStartEvent) {
@@ -148,6 +173,7 @@ export function KanbanBoard({ initialLeads, users }: KanbanBoardProps) {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-end gap-3 mb-6">
+        <KanbanFilters filters={filters} users={users} onChange={setFilters} />
         <Button variant="outline" onClick={() => setImportOpen(true)} size="md">
           <Upload className="h-4 w-4" />
           Importar CSV
