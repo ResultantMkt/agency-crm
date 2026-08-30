@@ -2,10 +2,11 @@
 
 import { useState, useCallback } from "react"
 import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
-import { Plus } from "lucide-react"
+import { Plus, Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { KanbanColumn } from "./kanban-column"
 import { LeadForm } from "./lead-form"
+import { CsvImportModal } from "./csv-import-modal"
 import type { Lead, LeadStage, User } from "@/types/models"
 
 const STAGES: { stage: LeadStage; label: string }[] = [
@@ -27,6 +28,7 @@ interface KanbanBoardProps {
 export function KanbanBoard({ initialLeads, users }: KanbanBoardProps) {
   const [leads, setLeads] = useState<Lead[]>(initialLeads)
   const [formOpen, setFormOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -78,10 +80,19 @@ export function KanbanBoard({ initialLeads, users }: KanbanBoardProps) {
     setLeads((prev) => [lead, ...prev])
   }
 
+  function handleImportSuccess(allLeads: Lead[]) {
+    setLeads(allLeads)
+    setImportOpen(false)
+  }
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-end mb-6">
+      <div className="flex items-center justify-end gap-3 mb-6">
+        <Button variant="outline" onClick={() => setImportOpen(true)} size="md">
+          <Upload className="h-4 w-4" />
+          Importar CSV
+        </Button>
         <Button onClick={() => setFormOpen(true)} size="md">
           <Plus className="h-4 w-4" />
           Novo Lead
@@ -108,6 +119,13 @@ export function KanbanBoard({ initialLeads, users }: KanbanBoardProps) {
         onClose={() => setFormOpen(false)}
         onSuccess={handleLeadCreated}
         users={users}
+      />
+
+      {/* Dialog de importação CSV */}
+      <CsvImportModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onSuccess={handleImportSuccess}
       />
     </div>
   )
