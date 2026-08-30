@@ -25,6 +25,7 @@ export interface Lead {
   createdAt: string
   updatedAt: string
   assignedTo?: { name: string; email: string } | null
+  tasks?: { id: string; title: string; description?: string | null; status: TaskStatus; dueDate?: string | null; assignedTo?: { name: string } | null }[]
 }
 
 export interface LeadHistory {

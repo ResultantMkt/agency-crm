@@ -3,10 +3,10 @@
 import { useDraggable } from "@dnd-kit/core"
 import { CSS } from "@dnd-kit/utilities"
 import { useRouter } from "next/navigation"
-import { Calendar, User } from "lucide-react"
+import { Calendar, User, ClipboardList } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/utils"
-import type { Lead, LeadSource } from "@/types/models"
+import type { Lead, LeadSource, TaskStatus } from "@/types/models"
 
 const SOURCE_LABELS: Record<LeadSource, string> = {
   TRAFFIC: "Tráfego",
@@ -15,11 +15,9 @@ const SOURCE_LABELS: Record<LeadSource, string> = {
   OTHER: "Outro",
 }
 
-function getDaysSince(dateStr: string): number {
+function formatDate(dateStr: string): string {
   const date = new Date(dateStr)
-  const now = new Date()
-  const diff = now.getTime() - date.getTime()
-  return Math.floor(diff / (1000 * 60 * 60 * 24))
+  return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })
 }
 
 function getInitials(name: string): string {
@@ -29,6 +27,42 @@ function getInitials(name: string): string {
     .map((n) => n[0])
     .join("")
     .toUpperCase()
+}
+
+type TaskUrgency = "overdue" | "pending" | null
+
+interface UrgentTask {
+  title: string
+  urgency: TaskUrgency
+}
+
+function getMostUrgentTask(
+  tasks: { id: string; title: string; status: TaskStatus; dueDate?: string | null }[] | undefined
+): UrgentTask | null {
+  if (!tasks || tasks.length === 0) return null
+
+  const openTasks = tasks.filter((t) => t.status !== "DONE")
+  if (openTasks.length === 0) return null
+
+  const now = new Date()
+  now.setHours(0, 0, 0, 0)
+
+  // Sort: overdue first, then by earliest dueDate, then tasks with no dueDate last
+  const sorted = [...openTasks].sort((a, b) => {
+    const da = a.dueDate ? new Date(a.dueDate) : null
+    const db = b.dueDate ? new Date(b.dueDate) : null
+    if (!da && !db) return 0
+    if (!da) return 1
+    if (!db) return -1
+    return da.getTime() - db.getTime()
+  })
+
+  const top = sorted[0]
+  const dueDate = top.dueDate ? new Date(top.dueDate) : null
+  if (dueDate) dueDate.setHours(0, 0, 0, 0)
+
+  const urgency: TaskUrgency = dueDate && dueDate < now ? "overdue" : "pending"
+  return { title: top.title, urgency }
 }
 
 interface LeadCardProps {
@@ -48,10 +82,9 @@ export function LeadCard({ lead }: LeadCardProps) {
     zIndex: isDragging ? 999 : undefined,
   }
 
-  const daysSince = getDaysSince(lead.createdAt)
+  const urgentTask = getMostUrgentTask(lead.tasks)
 
   function handleClick(e: React.MouseEvent) {
-    // Não navega se estiver arrastando
     if (isDragging) return
     router.push(`/crm/${lead.id}`)
   }
@@ -82,6 +115,34 @@ export function LeadCard({ lead }: LeadCardProps) {
         </Badge>
       </div>
 
+      {/* Tarefa vinculada */}
+      {urgentTask && (
+        <div
+          className={
+            urgentTask.urgency === "overdue"
+              ? "flex items-center gap-1.5 mb-3 px-2 py-1 rounded bg-red-500/15 border border-red-500/30"
+              : "flex items-center gap-1.5 mb-3 px-2 py-1 rounded bg-yellow-500/15 border border-yellow-500/30"
+          }
+        >
+          <ClipboardList
+            className={
+              urgentTask.urgency === "overdue"
+                ? "h-3 w-3 text-red-400 shrink-0"
+                : "h-3 w-3 text-yellow-400 shrink-0"
+            }
+          />
+          <span
+            className={
+              urgentTask.urgency === "overdue"
+                ? "text-xs text-red-300 truncate"
+                : "text-xs text-yellow-300 truncate"
+            }
+          >
+            {urgentTask.title}
+          </span>
+        </div>
+      )}
+
       {/* Footer */}
       <div className="flex items-center justify-between mt-2">
         {/* Responsável */}
@@ -101,12 +162,10 @@ export function LeadCard({ lead }: LeadCardProps) {
           </div>
         )}
 
-        {/* Dias */}
+        {/* Data de criação */}
         <div className="flex items-center gap-1 text-gray-500">
           <Calendar className="h-3 w-3" />
-          <span className="text-xs">
-            {daysSince === 0 ? "Hoje" : `${daysSince}d`}
-          </span>
+          <span className="text-xs">{formatDate(lead.createdAt)}</span>
         </div>
       </div>
     </div>

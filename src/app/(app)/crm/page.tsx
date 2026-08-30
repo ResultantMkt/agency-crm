@@ -17,6 +17,7 @@ export default async function CrmPage() {
     prisma.lead.findMany({
       include: {
         assignedTo: { select: { name: true, email: true } },
+        tasks: { select: { id: true, title: true, status: true, dueDate: true } },
       },
       orderBy: { createdAt: "desc" },
     }),
