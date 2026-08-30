@@ -202,13 +202,6 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-white">Dashboard</h2>
-        <p className="mt-1 text-sm text-gray-400">
-          {formatMonth(now)} — Visão geral do desempenho da agência
-        </p>
-      </div>
-
       {/* Cards de métricas */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
         <MetricCard

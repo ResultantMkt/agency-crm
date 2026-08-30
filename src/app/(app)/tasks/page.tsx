@@ -170,16 +170,7 @@ export default function TasksPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-white">Tarefas</h2>
-          <p className="mt-1 text-sm text-gray-400">
-            {overdue.length > 0
-              ? `${overdue.length} tarefa${overdue.length !== 1 ? "s" : ""} atrasada${overdue.length !== 1 ? "s" : ""}`
-              : "Tudo em dia"}
-          </p>
-        </div>
-
+      <div className="flex items-center justify-end gap-4">
         <div className="flex items-center gap-3">
           {users.length > 0 && (
             <select

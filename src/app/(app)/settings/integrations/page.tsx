@@ -339,13 +339,6 @@ export default function IntegrationsPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Integrações</h1>
-        <p className="text-sm text-gray-400 mt-1">
-          Configure as integrações externas da plataforma
-        </p>
-      </div>
-
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
         {/* Card 1: Z-API */}

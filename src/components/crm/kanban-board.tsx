@@ -80,13 +80,7 @@ export function KanbanBoard({ initialLeads, users }: KanbanBoardProps) {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-white">CRM — Kanban de Leads</h2>
-          <p className="mt-1 text-sm text-gray-400">
-            {leads.length} lead{leads.length !== 1 ? "s" : ""} no pipeline
-          </p>
-        </div>
+      <div className="flex items-center justify-end mb-6">
         <Button onClick={() => setFormOpen(true)} size="md">
           <Plus className="h-4 w-4" />
           Novo Lead
