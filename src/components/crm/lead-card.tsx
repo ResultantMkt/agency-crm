@@ -96,7 +96,7 @@ export function LeadCard({ lead }: LeadCardProps) {
       {...listeners}
       {...attributes}
       onClick={handleClick}
-      className="bg-gray-800 border border-gray-700 rounded-lg p-4 cursor-grab active:cursor-grabbing shadow hover:shadow-md hover:border-gray-600 transition-all select-none"
+      className={`bg-gray-800 border border-gray-700 rounded-lg p-4 shadow hover:shadow-md hover:border-gray-600 transition-all select-none ${isDragging ? "cursor-grabbing" : "cursor-pointer"}`}
     >
       {/* Nome */}
       <p className="text-sm font-semibold text-white truncate mb-2">{lead.name}</p>
