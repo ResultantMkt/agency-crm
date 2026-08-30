@@ -2,17 +2,6 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { z } from "zod"
 
-type LeadSource = "TRAFFIC" | "PROSPECTING" | "REFERRAL" | "OTHER"
-
-const SOURCES: LeadSource[] = ["TRAFFIC", "PROSPECTING", "REFERRAL", "OTHER"]
-
-const SOURCE_LABELS: Record<LeadSource, string> = {
-  TRAFFIC: "Tráfego Pago",
-  PROSPECTING: "Prospecção",
-  REFERRAL: "Indicação",
-  OTHER: "Outro",
-}
-
 function startOfDay(dateStr: string): Date {
   const [y, m, d] = dateStr.split("-").map(Number)
   return new Date(y, m - 1, d, 0, 0, 0, 0)
@@ -34,14 +23,6 @@ function defaultDateTo(): string {
   return `${last.getFullYear()}-${String(last.getMonth() + 1).padStart(2, "0")}-${String(last.getDate()).padStart(2, "0")}`
 }
 
-function div(a: number, b: number): number | null {
-  return b > 0 ? Math.round((a / b) * 100) / 100 : null
-}
-
-function rate(a: number, b: number): number {
-  return b > 0 ? Math.round((a / b) * 1000) / 10 : 0
-}
-
 export async function GET(request: Request) {
   try {
     const session = await auth()
@@ -55,118 +36,71 @@ export async function GET(request: Request) {
     const start = startOfDay(dateFrom)
     const end = endOfDay(dateTo)
 
-    const [leadsInPeriod, historyInPeriod, investmentRecord] = await Promise.all([
-      prisma.lead.findMany({
+    const [funnelCurrent, closedInPeriod, trafficIntegration] = await Promise.all([
+      // Leads criados no período, agrupados pelo estágio atual
+      prisma.lead.groupBy({
+        by: ["stage"],
         where: { createdAt: { gte: start, lte: end } },
-        select: { id: true, source: true },
+        _count: { stage: true },
       }),
 
+      // Leads que entraram em CLOSED no período via LeadHistory
       prisma.leadHistory.findMany({
-        where: {
-          toStage: { in: ["MQL", "SCREENING_SCHEDULED", "SCREENING_DONE", "CLOSING_MEETING", "CLOSED"] },
-          createdAt: { gte: start, lte: end },
-        },
-        select: {
-          leadId: true,
-          toStage: true,
-          lead: { select: { source: true, estimatedValue: true } },
-        },
-        orderBy: { createdAt: "asc" },
+        where: { toStage: "CLOSED", createdAt: { gte: start, lte: end } },
+        select: { leadId: true, lead: { select: { estimatedValue: true } } },
+        distinct: ["leadId"],
       }),
 
+      // Investimento em tráfego do período
       prisma.integration.findUnique({
-        where: { name: "channel_investment" },
+        where: { name: "traffic_investment" },
         select: { config: true },
       }),
     ])
 
-    const investmentConfig = ((investmentRecord?.config ?? {}) as Record<string, number>)
-
-    // Accumulate per-source buckets
-    type Bucket = {
-      leadIds: Set<string>
-      mqlIds: Set<string>
-      screeningScheduledIds: Set<string>
-      screeningDoneIds: Set<string>
-      closingMeetingIds: Set<string>
-      closedIds: Set<string>
-      closingValue: number
+    const funnel: Record<string, number> = {}
+    for (const row of funnelCurrent) {
+      funnel[row.stage] = row._count.stage
     }
 
-    const bySource: Record<string, Bucket> = {}
-    for (const src of SOURCES) {
-      bySource[src] = {
-        leadIds: new Set(),
-        mqlIds: new Set(),
-        screeningScheduledIds: new Set(),
-        screeningDoneIds: new Set(),
-        closingMeetingIds: new Set(),
-        closedIds: new Set(),
-        closingValue: 0,
-      }
+    const newClients = closedInPeriod.length
+    const newMrr = closedInPeriod.reduce(
+      (sum, h) => sum + Number(h.lead?.estimatedValue ?? 0),
+      0
+    )
+
+    const trafficConfig = ((trafficIntegration?.config ?? {}) as Record<string, number>)
+    const trafficInvestment = trafficConfig[periodKey] ?? 0
+    const cac = newClients > 0 ? trafficInvestment / newClients : null
+
+    // Conversion rates for the new 4-stage sequence
+    const leadCount = funnel["LEAD"] ?? 0
+    const mqlCount = funnel["MQL"] ?? 0
+    const screeningScheduled = funnel["SCREENING_SCHEDULED"] ?? 0
+    const screeningDone = funnel["SCREENING_DONE"] ?? 0
+    const closingMeeting = funnel["CLOSING_MEETING"] ?? 0
+    const closedCount = funnel["CLOSED"] ?? 0
+
+    function rate(a: number, b: number) {
+      return b > 0 ? Math.round((a / b) * 1000) / 10 : 0
     }
 
-    for (const lead of leadsInPeriod) {
-      bySource[lead.source]?.leadIds.add(lead.id)
-    }
-
-    for (const h of historyInPeriod) {
-      const src = h.lead?.source as LeadSource | undefined
-      if (!src || !bySource[src]) continue
-      const b = bySource[src]
-      switch (h.toStage) {
-        case "MQL": b.mqlIds.add(h.leadId); break
-        case "SCREENING_SCHEDULED": b.screeningScheduledIds.add(h.leadId); break
-        case "SCREENING_DONE": b.screeningDoneIds.add(h.leadId); break
-        case "CLOSING_MEETING": b.closingMeetingIds.add(h.leadId); break
-        case "CLOSED":
-          if (!b.closedIds.has(h.leadId)) {
-            b.closingValue += Number(h.lead?.estimatedValue ?? 0)
-          }
-          b.closedIds.add(h.leadId)
-          break
-      }
-    }
-
-    const channels = SOURCES.map((src) => {
-      const b = bySource[src]
-      const investment = investmentConfig[`${src}_${periodKey}`] ?? 0
-
-      const leads = b.leadIds.size
-      const mql = b.mqlIds.size
-      const screeningScheduled = b.screeningScheduledIds.size
-      const screeningDone = b.screeningDoneIds.size
-      const closingMeeting = b.closingMeetingIds.size
-      const closings = b.closedIds.size
-      const closingValue = Math.round(b.closingValue * 100) / 100
-
-      return {
-        source: src,
-        label: SOURCE_LABELS[src],
-        investment,
-        leads,
-        mql,
-        screeningScheduled,
-        screeningDone,
-        closingMeeting,
-        closings,
-        closingValue,
-        costPerLead: div(investment, leads),
-        costPerMql: div(investment, mql),
-        costPerScreeningScheduled: div(investment, screeningScheduled),
-        costPerScreeningDone: div(investment, screeningDone),
-        costPerClosingMeeting: div(investment, closingMeeting),
-        cac: div(investment, closings),
-        ltv: closingValue,
-        roas: div(closingValue, investment),
-        rateLeadToMql: rate(mql, leads),
-        rateMqlToScreening: rate(screeningScheduled, mql),
-        rateClosingMeetingToClosing: rate(closings, closingMeeting),
-        rateLeadToClosing: rate(closings, leads),
-      }
+    return Response.json({
+      period: { dateFrom, dateTo, key: periodKey },
+      funnel,
+      acquisition: {
+        newClients,
+        newMrr: Math.round(newMrr * 100) / 100,
+        trafficInvestment,
+        cac: cac !== null ? Math.round(cac * 100) / 100 : null,
+      },
+      conversionRates: {
+        leadToMql: rate(mqlCount, leadCount),
+        mqlToScreening: rate(screeningScheduled, mqlCount),
+        screeningToClosingMeeting: rate(closingMeeting, screeningDone),
+        closingMeetingToClose: rate(closedCount, closingMeeting),
+      },
     })
-
-    return Response.json({ period: { dateFrom, dateTo, key: periodKey }, channels })
   } catch (error) {
     console.error("[GET /api/dashboard/metrics]", error)
     return Response.json({ error: "Internal server error" }, { status: 500 })
@@ -180,27 +114,25 @@ export async function PATCH(request: Request) {
 
     const body = await request.json()
     const parsed = z.object({
-      source: z.enum(["TRAFFIC", "PROSPECTING", "REFERRAL", "OTHER"]),
       periodKey: z.string().min(1),
       value: z.number().min(0),
     }).safeParse(body)
 
     if (!parsed.success) return Response.json({ error: "Invalid input" }, { status: 400 })
 
-    const { source, periodKey, value } = parsed.data
-    const configKey = `${source}_${periodKey}`
+    const { periodKey, value } = parsed.data
 
     const existing = await prisma.integration.findUnique({
-      where: { name: "channel_investment" },
+      where: { name: "traffic_investment" },
       select: { config: true },
     })
 
     const config = ((existing?.config ?? {}) as Record<string, number>)
-    config[configKey] = value
+    config[periodKey] = value
 
     await prisma.integration.upsert({
-      where: { name: "channel_investment" },
-      create: { name: "channel_investment", config },
+      where: { name: "traffic_investment" },
+      create: { name: "traffic_investment", config },
       update: { config },
     })
 
