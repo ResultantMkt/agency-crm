@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { X, ExternalLink, Plus, Phone, User, Layers } from "lucide-react"
+import { X, ExternalLink, Plus, Phone, User, Layers, FileText } from "lucide-react"
 import type { Lead, LeadSource, LeadStage, User as UserType } from "@/types/models"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -90,11 +90,16 @@ export function ContactPanel({ conversationId, name, phone, photoUrl, onClose }:
   const [creating, setCreating] = useState(false)
   const [imgError, setImgError] = useState(false)
 
-  // Editable fields (local state, synced on change)
+  // Editable fields
   const [source, setSource] = useState<LeadSource>("OTHER")
   const [assignedToId, setAssignedToId] = useState<string | null>(null)
   const [editingField, setEditingField] = useState<"source" | "assignedTo" | null>(null)
   const [saving, setSaving] = useState(false)
+
+  // Notes
+  const [notes, setNotes] = useState("")
+  const [notesSaved, setNotesSaved] = useState(false)
+  const notesDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     setLoading(true)
@@ -106,6 +111,7 @@ export function ContactPanel({ conversationId, name, phone, photoUrl, onClose }:
         if (l) {
           setSource(l.source)
           setAssignedToId(l.assignedToId ?? null)
+          setNotes(l.notes ?? "")
         }
       })
       .finally(() => setLoading(false))
@@ -156,9 +162,21 @@ export function ContactPanel({ conversationId, name, phone, photoUrl, onClose }:
       setLead(newLead)
       setSource(newLead.source)
       setAssignedToId(newLead.assignedToId ?? null)
+      setNotes(newLead.notes ?? "")
     } finally {
       setCreating(false)
     }
+  }
+
+  function handleNotesChange(value: string) {
+    setNotes(value)
+    setNotesSaved(false)
+    if (notesDebounceRef.current) clearTimeout(notesDebounceRef.current)
+    notesDebounceRef.current = setTimeout(async () => {
+      await patchLead({ notes: value || null })
+      setNotesSaved(true)
+      setTimeout(() => setNotesSaved(false), 2000)
+    }, 800)
   }
 
   const assignedUser = users.find((u) => u.id === assignedToId)
@@ -266,7 +284,23 @@ export function ContactPanel({ conversationId, name, phone, photoUrl, onClose }:
               </FieldRow>
             )}
 
+            {/* Notes */}
             <div className="mt-4">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <FileText className="h-3.5 w-3.5 text-gray-500" />
+                <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Notas</span>
+                {notesSaved && <span className="ml-auto text-[10px] text-green-500">Salvo</span>}
+              </div>
+              <textarea
+                value={notes}
+                onChange={(e) => handleNotesChange(e.target.value)}
+                placeholder="Adicione uma nota sobre este contato..."
+                rows={4}
+                className="w-full text-xs bg-gray-800/60 border border-gray-700 text-white rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder:text-gray-600"
+              />
+            </div>
+
+            <div className="mt-3">
               <button
                 type="button"
                 onClick={() => router.push(`/crm/${lead.id}`)}
