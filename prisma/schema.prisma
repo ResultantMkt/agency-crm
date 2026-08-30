@@ -102,6 +102,7 @@ model Lead {
   name           String
   source         LeadSource @default(OTHER)
   stage          LeadStage  @default(LEAD)
+  position       Int        @default(0)
   phone          String
   email          String?
   assignedToId   String?

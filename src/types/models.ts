@@ -19,6 +19,7 @@ export interface Lead {
   email?: string | null
   source: LeadSource
   stage: LeadStage
+  position: number
   assignedToId?: string | null
   estimatedValue?: string | null
   notes?: string | null

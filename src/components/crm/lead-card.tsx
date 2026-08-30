@@ -1,6 +1,6 @@
 "use client"
 
-import { useDraggable } from "@dnd-kit/core"
+import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { useRouter } from "next/navigation"
 import { Calendar, User, ClipboardList } from "lucide-react"
@@ -71,13 +71,14 @@ interface LeadCardProps {
 
 export function LeadCard({ lead }: LeadCardProps) {
   const router = useRouter()
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: lead.id,
     data: { lead },
   })
 
   const style = {
-    transform: CSS.Translate.toString(transform),
+    transform: CSS.Transform.toString(transform),
+    transition,
     opacity: isDragging ? 0.5 : 1,
     zIndex: isDragging ? 999 : undefined,
   }

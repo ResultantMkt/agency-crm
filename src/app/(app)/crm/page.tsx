@@ -19,7 +19,7 @@ export default async function CrmPage() {
         assignedTo: { select: { name: true, email: true } },
         tasks: { select: { id: true, title: true, status: true, dueDate: true } },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ position: "asc" }, { createdAt: "desc" }],
     }),
     prisma.user.findMany({
       select: { id: true, name: true, email: true, role: true },

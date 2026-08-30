@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react"
 import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
+import { arrayMove } from "@dnd-kit/sortable"
 import { Plus, Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { KanbanColumn } from "./kanban-column"
@@ -20,6 +21,8 @@ const STAGES: { stage: LeadStage; label: string }[] = [
   { stage: "LOST", label: "Perdido" },
 ]
 
+const STAGE_IDS = new Set<string>(STAGES.map((s) => s.stage))
+
 interface KanbanBoardProps {
   initialLeads: Lead[]
   users: User[]
@@ -37,7 +40,10 @@ export function KanbanBoard({ initialLeads, users }: KanbanBoardProps) {
   )
 
   const getLeadsForStage = useCallback(
-    (stage: LeadStage) => leads.filter((l) => l.stage === stage),
+    (stage: LeadStage) =>
+      leads
+        .filter((l) => l.stage === stage)
+        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0)),
     [leads]
   )
 
@@ -45,34 +51,72 @@ export function KanbanBoard({ initialLeads, users }: KanbanBoardProps) {
     const { active, over } = event
     if (!over) return
 
-    const leadId = active.id as string
-    const newStage = over.id as LeadStage
+    const activeLeadId = active.id as string
+    const activeLead = leads.find((l) => l.id === activeLeadId)
+    if (!activeLead) return
 
-    const lead = leads.find((l) => l.id === leadId)
-    if (!lead || lead.stage === newStage) return
+    const overId = over.id as string
 
-    const previousLeads = leads
+    // Determine target stage and whether we're hovering over a specific card
+    let targetStage: LeadStage
+    let overLeadId: string | null = null
 
-    // Atualização otimista
-    setLeads((prev) =>
-      prev.map((l) =>
-        l.id === leadId ? { ...l, stage: newStage, updatedAt: new Date().toISOString() } : l
+    if (STAGE_IDS.has(overId)) {
+      // Dropped on the column's droppable area
+      targetStage = overId as LeadStage
+    } else {
+      // Dropped on another lead card
+      const overLead = leads.find((l) => l.id === overId)
+      if (!overLead) return
+      targetStage = overLead.stage
+      overLeadId = overId
+    }
+
+    if (activeLead.stage === targetStage) {
+      // Intra-column reorder
+      if (!overLeadId || overLeadId === activeLeadId) return
+
+      const columnLeads = leads
+        .filter((l) => l.stage === targetStage)
+        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+
+      const activeIndex = columnLeads.findIndex((l) => l.id === activeLeadId)
+      const overIndex = columnLeads.findIndex((l) => l.id === overLeadId)
+      if (activeIndex === overIndex) return
+
+      const reordered = arrayMove(columnLeads, activeIndex, overIndex)
+      const updates = reordered.map((l, i) => ({ id: l.id, position: i }))
+
+      const posMap = new Map(updates.map((u) => [u.id, u.position]))
+      setLeads((prev) =>
+        prev.map((l) => (posMap.has(l.id) ? { ...l, position: posMap.get(l.id)! } : l))
       )
-    )
 
-    try {
-      const res = await fetch(`/api/leads/${leadId}`, {
+      fetch("/api/leads/reorder", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ stage: newStage }),
+        body: JSON.stringify({ updates }),
       })
+    } else {
+      // Inter-column move
+      const previousLeads = leads
 
-      if (!res.ok) {
-        throw new Error("Falha ao atualizar estágio")
+      setLeads((prev) =>
+        prev.map((l) =>
+          l.id === activeLeadId ? { ...l, stage: targetStage, updatedAt: new Date().toISOString() } : l
+        )
+      )
+
+      try {
+        const res = await fetch(`/api/leads/${activeLeadId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ stage: targetStage }),
+        })
+        if (!res.ok) throw new Error("Falha ao atualizar estágio")
+      } catch {
+        setLeads(previousLeads)
       }
-    } catch {
-      // Reverte em caso de erro
-      setLeads(previousLeads)
     }
   }
 
