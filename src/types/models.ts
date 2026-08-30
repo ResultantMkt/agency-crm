@@ -88,6 +88,9 @@ export interface Conversation {
   phoneNumber: string
   contactName?: string | null
   contactNameManual?: boolean
+  archived?: boolean
+  pinned?: boolean
+  favorite?: boolean
   createdAt: string
   updatedAt: string
   lead?: { name: string } | null

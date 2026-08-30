@@ -191,6 +191,9 @@ model Conversation {
   phoneNumber         String   @unique
   contactName         String?
   contactNameManual   Boolean  @default(false)
+  archived            Boolean  @default(false)
+  pinned              Boolean  @default(false)
+  favorite            Boolean  @default(false)
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 

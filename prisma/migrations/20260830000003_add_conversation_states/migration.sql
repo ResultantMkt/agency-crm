@@ -1,0 +1,3 @@
+ALTER TABLE "Conversation" ADD COLUMN "archived" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "Conversation" ADD COLUMN "pinned" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "Conversation" ADD COLUMN "favorite" BOOLEAN NOT NULL DEFAULT false;

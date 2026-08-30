@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git push *)",
+      "Bash(npx vercel *)",
+      "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")",
+      "Bash(xargs cat *)",
+      "Bash(xargs grep *)",
+      "WebFetch(domain:developer.z-api.io)",
+      "Bash(npx prisma *)",
+      "Bash(git -C .claude/worktrees/agent-aefed33e diff --stat HEAD)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(vercel *)",
+      "Bash(npx tsc *)",
+      "Bash(npm install *)",
+      "Bash(node -e \"require\\('@neondatabase/serverless'\\); require\\('@prisma/adapter-neon'\\); console.log\\('ok'\\)\")"
+    ]
+  }
+}
