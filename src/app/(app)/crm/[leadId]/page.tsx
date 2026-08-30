@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { notFound, redirect } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, Calendar, User, Phone, DollarSign, Clock, CheckCircle2, Circle } from "lucide-react"
+import { ArrowLeft, Calendar, User, Phone, DollarSign, Clock, CheckCircle2, Circle, MessageSquare } from "lucide-react"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { Badge } from "@/components/ui/badge"
@@ -90,6 +90,14 @@ export default async function LeadDetailPage({
           <h2 className="text-2xl font-bold text-white">{lead.name}</h2>
           <div className="flex items-center gap-3 mt-1">
             <p className="text-sm text-gray-400">{lead.phone}</p>
+            <Link
+              href={`/chat?phone=${encodeURIComponent(lead.phone)}`}
+              className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+              title="Abrir conversa no WhatsApp"
+            >
+              <MessageSquare className="h-3.5 w-3.5" />
+              Chat
+            </Link>
             {lead.email && (
               <p className="text-sm text-gray-500">{lead.email}</p>
             )}

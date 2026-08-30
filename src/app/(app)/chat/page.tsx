@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
+import { useSearchParams } from "next/navigation"
 import { MessageSquare } from "lucide-react"
 import { ChatWindow } from "@/components/chat/chat-window"
 import type { Conversation } from "@/types/models"
@@ -27,10 +28,15 @@ function formatTime(dateStr: string): string {
   }).format(d)
 }
 
+function normalizePhone(p: string) { return p.replace(/\D/g, "") }
+
 export default function ChatPage() {
+  const searchParams = useSearchParams()
+  const phoneParam = searchParams.get("phone")
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const autoSelectedRef = useRef(false)
 
   const fetchConversations = useCallback(async () => {
     const res = await fetch("/api/conversations")
@@ -48,6 +54,15 @@ export default function ChatPage() {
     const interval = setInterval(fetchConversations, 5000)
     return () => clearInterval(interval)
   }, [fetchConversations])
+
+  // Auto-select conversation matching the ?phone= param (only once after first load)
+  useEffect(() => {
+    if (!phoneParam || autoSelectedRef.current || conversations.length === 0) return
+    const normalized = normalizePhone(phoneParam)
+    const match = conversations.find((c) => normalizePhone(c.phoneNumber) === normalized)
+    if (match) { setSelectedId(match.id); autoSelectedRef.current = true }
+    else autoSelectedRef.current = true
+  }, [phoneParam, conversations])
 
   const selectedConversation = conversations.find((c) => c.id === selectedId) ?? null
 
