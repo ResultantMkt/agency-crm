@@ -1,11 +1,12 @@
 "use client"
 
 import { useState, useCallback } from "react"
-import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
+import { DndContext, DragEndEvent, DragStartEvent, DragOverlay, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
 import { arrayMove } from "@dnd-kit/sortable"
 import { Plus, Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { KanbanColumn } from "./kanban-column"
+import { LeadCardOverlay } from "./lead-card"
 import { LeadForm } from "./lead-form"
 import { CsvImportModal } from "./csv-import-modal"
 import type { Lead, LeadStage, User } from "@/types/models"
@@ -30,6 +31,7 @@ interface KanbanBoardProps {
 
 export function KanbanBoard({ initialLeads, users }: KanbanBoardProps) {
   const [leads, setLeads] = useState<Lead[]>(initialLeads)
+  const [activeId, setActiveId] = useState<string | null>(null)
   const [formOpen, setFormOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
 
@@ -47,7 +49,12 @@ export function KanbanBoard({ initialLeads, users }: KanbanBoardProps) {
     [leads]
   )
 
+  function handleDragStart(event: DragStartEvent) {
+    setActiveId(event.active.id as string)
+  }
+
   async function handleDragEnd(event: DragEndEvent) {
+    setActiveId(null)
     const { active, over } = event
     if (!over) return
 
@@ -152,7 +159,7 @@ export function KanbanBoard({ initialLeads, users }: KanbanBoardProps) {
       </div>
 
       {/* Kanban */}
-      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+      <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         <div className="flex gap-4 overflow-x-auto pb-4 flex-1">
           {STAGES.map(({ stage, label }) => (
             <KanbanColumn
@@ -166,6 +173,14 @@ export function KanbanBoard({ initialLeads, users }: KanbanBoardProps) {
             />
           ))}
         </div>
+        <DragOverlay dropAnimation={{ duration: 180, easing: "ease" }}>
+          {activeId ? (
+            <LeadCardOverlay
+              lead={leads.find((l) => l.id === activeId)!}
+              users={users}
+            />
+          ) : null}
+        </DragOverlay>
       </DndContext>
 
       {/* Dialog de criação */}

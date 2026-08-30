@@ -115,7 +115,7 @@ export function LeadCard({ lead, users = [], onDelete, onUpdate }: LeadCardProps
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.15 : 1,
     zIndex: isDragging ? 999 : undefined,
   }
 
@@ -407,5 +407,77 @@ export function LeadCard({ lead, users = [], onDelete, onUpdate }: LeadCardProps
         </DialogContent>
       </DialogRoot>
     </>
+  )
+}
+
+// ─── Overlay (pure visual, no hooks — used inside DragOverlay) ────────────────
+
+interface LeadCardOverlayProps {
+  lead: Lead
+  users?: UserType[]
+}
+
+export function LeadCardOverlay({ lead, users = [] }: LeadCardOverlayProps) {
+  const urgentTask = getMostUrgentTask(lead.tasks)
+  const assignedUser = users.find((u) => u.id === lead.assignedToId)
+  const displayAssignedName = assignedUser?.name ?? lead.assignedTo?.name ?? null
+
+  return (
+    <div className="bg-gray-800 border border-blue-500/60 rounded-lg p-4 shadow-2xl ring-1 ring-blue-500/30 cursor-grabbing select-none rotate-1">
+      <div className="flex items-start justify-between gap-1 mb-2">
+        <p className="text-sm font-semibold text-white truncate">{lead.name}</p>
+      </div>
+
+      {lead.estimatedValue && (
+        <p className="text-sm font-medium text-emerald-400 mb-2">
+          {formatCurrency(parseFloat(lead.estimatedValue))}
+        </p>
+      )}
+
+      <div className="mb-3">
+        <Badge variant="outline" className="text-xs">
+          {SOURCE_LABELS[lead.source]}
+        </Badge>
+      </div>
+
+      {urgentTask && (
+        <div
+          className={
+            urgentTask.urgency === "overdue"
+              ? "flex items-center gap-1.5 mb-3 px-2 py-1 rounded bg-red-500/15 border border-red-500/30"
+              : "flex items-center gap-1.5 mb-3 px-2 py-1 rounded bg-yellow-500/15 border border-yellow-500/30"
+          }
+        >
+          <ClipboardList
+            className={urgentTask.urgency === "overdue" ? "h-3 w-3 text-red-400 shrink-0" : "h-3 w-3 text-yellow-400 shrink-0"}
+          />
+          <span className={urgentTask.urgency === "overdue" ? "text-xs text-red-300 truncate" : "text-xs text-yellow-300 truncate"}>
+            {urgentTask.title}
+          </span>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between mt-2">
+        {displayAssignedName ? (
+          <div className="flex items-center gap-1.5">
+            <div className="h-6 w-6 rounded-full bg-blue-600 flex items-center justify-center text-xs font-semibold text-white shrink-0">
+              {getInitials(displayAssignedName)}
+            </div>
+            <span className="text-xs text-gray-400 truncate max-w-[80px]">
+              {displayAssignedName.split(" ")[0]}
+            </span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1 text-gray-600">
+            <User className="h-3.5 w-3.5" />
+            <span className="text-xs">Sem responsável</span>
+          </div>
+        )}
+        <div className="flex items-center gap-1 text-gray-500">
+          <Calendar className="h-3 w-3" />
+          <span className="text-xs">{formatDate(lead.createdAt)}</span>
+        </div>
+      </div>
+    </div>
   )
 }
