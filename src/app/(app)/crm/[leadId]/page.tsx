@@ -1,14 +1,14 @@
 import type { Metadata } from "next"
 import { notFound, redirect } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, Clock, CheckCircle2, Circle, MessageSquare } from "lucide-react"
+import { ArrowLeft, MessageSquare } from "lucide-react"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { Badge } from "@/components/ui/badge"
 import { formatDate, cn } from "@/lib/utils"
 import type { Lead, LeadHistory, Task, LeadStage, User } from "@/types/models"
 import { LeadDetailClient } from "./lead-detail-client"
 import { LeadInfoClient } from "./lead-info-client"
+import { LeadTasksClient } from "./lead-tasks-client"
 
 export const metadata: Metadata = {
   title: "Detalhe do Lead — Agency CRM",
@@ -169,59 +169,7 @@ export default async function LeadDetailPage({
       </section>
 
       {/* Tarefas */}
-      <section>
-        <h3 className="text-base font-semibold text-white mb-3">
-          Tarefas ({lead.tasks.length})
-        </h3>
-        {lead.tasks.length === 0 ? (
-          <p className="text-sm text-gray-500">Nenhuma tarefa vinculada a este lead.</p>
-        ) : (
-          <ul className="space-y-2">
-            {lead.tasks.map((task) => (
-              <li
-                key={task.id}
-                className="flex items-start gap-3 bg-gray-800/60 border border-gray-700/50 rounded-lg px-4 py-3"
-              >
-                {task.status === "DONE" ? (
-                  <CheckCircle2 className="h-4 w-4 text-emerald-400 mt-0.5 shrink-0" />
-                ) : (
-                  <Circle className="h-4 w-4 text-gray-500 mt-0.5 shrink-0" />
-                )}
-                <div className="flex-1 min-w-0">
-                  <p
-                    className={cn(
-                      "text-sm font-medium",
-                      task.status === "DONE" ? "text-gray-500 line-through" : "text-white"
-                    )}
-                  >
-                    {task.title}
-                  </p>
-                  {task.description && (
-                    <p className="text-xs text-gray-500 mt-0.5 truncate">{task.description}</p>
-                  )}
-                  <div className="flex items-center gap-3 mt-1">
-                    {task.assignedTo && (
-                      <span className="text-xs text-gray-500">{task.assignedTo.name}</span>
-                    )}
-                    {task.dueDate && (
-                      <span className="text-xs text-gray-500 flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {formatDate(task.dueDate)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <Badge
-                  variant={task.status === "DONE" ? "success" : "warning"}
-                  className="shrink-0 text-xs"
-                >
-                  {task.status === "DONE" ? "Concluída" : "Pendente"}
-                </Badge>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <LeadTasksClient leadId={lead.id} initialTasks={lead.tasks} users={users} />
     </div>
   )
 }

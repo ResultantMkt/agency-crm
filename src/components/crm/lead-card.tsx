@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { useRouter } from "next/navigation"
-import { Calendar, User, ClipboardList, MoreVertical, Trash2 } from "lucide-react"
+import { Calendar, User, ClipboardList, MoreVertical, Trash2, Plus } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import {
   DialogRoot,
@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { formatCurrency } from "@/lib/utils"
 import type { Lead, LeadSource, LeadSource as LeadSourceType, TaskStatus, User as UserType } from "@/types/models"
+import { QuickTaskModal, type CreatedTask } from "./quick-task-modal"
 
 const SOURCE_LABELS: Record<LeadSource, string> = {
   TRAFFIC: "Tráfego",
@@ -96,6 +97,9 @@ export function LeadCard({ lead, users = [], onDelete, onUpdate }: LeadCardProps
   // Inline edit state
   const [editingField, setEditingField] = useState<CardEditingField>(null)
   const editRef = useRef<HTMLDivElement>(null)
+
+  // Quick task state
+  const [taskModalOpen, setTaskModalOpen] = useState(false)
 
   // Delete state
   const [menuOpen, setMenuOpen] = useState(false)
@@ -177,6 +181,19 @@ export function LeadCard({ lead, users = [], onDelete, onUpdate }: LeadCardProps
     e.stopPropagation()
     setMenuOpen(false)
     setConfirmOpen(true)
+  }
+
+  function handleTaskCreated(task: CreatedTask) {
+    setTaskModalOpen(false)
+    const newTask = {
+      id: task.id,
+      title: task.title,
+      description: task.description,
+      status: task.status,
+      dueDate: task.dueDate,
+      assignedTo: task.assignedTo,
+    }
+    onUpdate?.(lead.id, { tasks: [...(lead.tasks ?? []), newTask] })
   }
 
   async function handleConfirmDelete() {
@@ -265,7 +282,18 @@ export function LeadCard({ lead, users = [], onDelete, onUpdate }: LeadCardProps
           )}
         </div>
 
-        {/* Tarefa vinculada */}
+        {/* Tarefa vinculada ou botão de criação rápida */}
+        {!urgentTask && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setTaskModalOpen(true) }}
+            onPointerDown={(e) => e.stopPropagation()}
+            className="flex items-center gap-1 mb-3 text-xs text-gray-600 hover:text-blue-400 transition-colors"
+          >
+            <Plus className="h-3 w-3" />
+            Tarefa
+          </button>
+        )}
         {urgentTask && (
           <div
             className={
@@ -348,6 +376,15 @@ export function LeadCard({ lead, users = [], onDelete, onUpdate }: LeadCardProps
           </div>
         </div>
       </div>
+
+      {/* Modal de criação rápida de tarefa */}
+      <QuickTaskModal
+        open={taskModalOpen}
+        onClose={() => setTaskModalOpen(false)}
+        onSuccess={handleTaskCreated}
+        leadId={lead.id}
+        users={users}
+      />
 
       {/* Confirmação de exclusão */}
       <DialogRoot open={confirmOpen} onOpenChange={(v) => { if (!deleting) setConfirmOpen(v) }}>
