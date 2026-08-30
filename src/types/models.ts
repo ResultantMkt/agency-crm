@@ -91,6 +91,7 @@ export interface Conversation {
   archived?: boolean
   pinned?: boolean
   favorite?: boolean
+  pinnedMessageId?: string | null
   createdAt: string
   updatedAt: string
   lead?: { name: string } | null

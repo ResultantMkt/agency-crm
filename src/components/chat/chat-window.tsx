@@ -1,7 +1,11 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react"
-import { Send, Clock, AlertTriangle, Pencil, Check, X } from "lucide-react"
+import { useState, useEffect, useRef, useCallback, useMemo } from "react"
+import {
+  Send, Clock, AlertTriangle, Pencil, Check, X,
+  Search, Pin, Archive, Star, Trash2, MoreVertical,
+  ChevronUp, ChevronDown,
+} from "lucide-react"
 import { MessageBubble } from "@/components/chat/message-bubble"
 import type { Conversation, Message } from "@/types/models"
 
@@ -9,27 +13,49 @@ interface ChatWindowProps {
   conversationId: string
   conversation: Conversation
   onConversationUpdate?: () => void
+  onDelete?: () => void
 }
 
-export function ChatWindow({ conversationId, conversation, onConversationUpdate }: ChatWindowProps) {
+export function ChatWindow({
+  conversationId,
+  conversation,
+  onConversationUpdate,
+  onDelete,
+}: ChatWindowProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [sending, setSending] = useState(false)
   const [queuePaused, setQueuePaused] = useState(false)
   const [queuePendingCount, setQueuePendingCount] = useState(0)
   const [dailyLimitReached, setDailyLimitReached] = useState(false)
+
+  // Name editing
   const [editingName, setEditingName] = useState(false)
   const [nameInput, setNameInput] = useState("")
   const [savingName, setSavingName] = useState(false)
+
+  // Search in conversation
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [matchCursor, setMatchCursor] = useState(0)
+
+  // Header 3-dot menu
+  const [headerMenuOpen, setHeaderMenuOpen] = useState(false)
+  const headerMenuRef = useRef<HTMLDivElement>(null)
+
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const nameInputRef = useRef<HTMLInputElement>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const matchRefs = useRef<(HTMLDivElement | null)[]>([])
+
+  // ── Fetch messages ──
 
   const fetchMessages = useCallback(async () => {
     const res = await fetch(`/api/conversations/${conversationId}/messages`)
     if (res.ok) {
       const data = await res.json()
-      setMessages(JSON.parse(JSON.stringify(Array.isArray(data) ? data : data.messages ?? [])))
+      setMessages(Array.isArray(data) ? data : data.messages ?? [])
     }
   }, [conversationId])
 
@@ -47,9 +73,7 @@ export function ChatWindow({ conversationId, conversation, onConversationUpdate 
         setDailyLimitReached(false)
       }
       if (result.status === "sent") fetchMessages()
-    } catch {
-      // silently ignore
-    }
+    } catch { /* silently ignore */ }
   }, [fetchMessages])
 
   useEffect(() => {
@@ -66,6 +90,53 @@ export function ChatWindow({ conversationId, conversation, onConversationUpdate 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
+
+  // ── Header menu outside click ──
+
+  useEffect(() => {
+    if (!headerMenuOpen) return
+    function onOutside(e: MouseEvent) {
+      if (headerMenuRef.current && !headerMenuRef.current.contains(e.target as Node)) {
+        setHeaderMenuOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", onOutside)
+    return () => document.removeEventListener("mousedown", onOutside)
+  }, [headerMenuOpen])
+
+  // ── Search ──
+
+  const matchIds = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase()
+    if (!q) return []
+    return messages.filter((m) => m.content.toLowerCase().includes(q)).map((m) => m.id)
+  }, [messages, searchQuery])
+
+  useEffect(() => { setMatchCursor(0) }, [matchIds])
+
+  useEffect(() => {
+    if (matchIds.length === 0) return
+    const el = matchRefs.current[matchCursor]
+    el?.scrollIntoView({ behavior: "smooth", block: "center" })
+  }, [matchCursor, matchIds])
+
+  function openSearch() {
+    setSearchOpen(true)
+    setTimeout(() => searchInputRef.current?.focus(), 0)
+  }
+
+  function closeSearch() {
+    setSearchOpen(false)
+    setSearchQuery("")
+    setMatchCursor(0)
+  }
+
+  function navMatch(dir: 1 | -1) {
+    if (matchIds.length === 0) return
+    setMatchCursor((prev) => (prev + dir + matchIds.length) % matchIds.length)
+  }
+
+  // ── Send ──
 
   async function sendMessage(e: React.FormEvent) {
     e.preventDefault()
@@ -90,7 +161,6 @@ export function ChatWindow({ conversationId, conversation, onConversationUpdate 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ conversationId, content }),
       })
-
       if (res.ok) {
         await fetchMessages()
         triggerQueueProcess()
@@ -101,11 +171,10 @@ export function ChatWindow({ conversationId, conversation, onConversationUpdate 
     }
   }
 
+  // ── Name editing ──
+
   const resolvedName =
-    conversation.contactName ??
-    conversation.lead?.name ??
-    conversation.client?.name ??
-    conversation.phoneNumber
+    conversation.contactName ?? conversation.lead?.name ?? conversation.client?.name ?? conversation.phoneNumber
 
   function startEditing() {
     setNameInput(resolvedName)
@@ -113,17 +182,11 @@ export function ChatWindow({ conversationId, conversation, onConversationUpdate 
     setTimeout(() => nameInputRef.current?.select(), 0)
   }
 
-  function cancelEditing() {
-    setEditingName(false)
-    setNameInput("")
-  }
+  function cancelEditing() { setEditingName(false); setNameInput("") }
 
   async function saveName() {
     const trimmed = nameInput.trim()
-    if (!trimmed || trimmed === resolvedName) {
-      cancelEditing()
-      return
-    }
+    if (!trimmed || trimmed === resolvedName) { cancelEditing(); return }
     setSavingName(true)
     try {
       const res = await fetch(`/api/conversations/${conversationId}`, {
@@ -131,9 +194,7 @@ export function ChatWindow({ conversationId, conversation, onConversationUpdate 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ contactName: trimmed }),
       })
-      if (res.ok) {
-        onConversationUpdate?.()
-      }
+      if (res.ok) onConversationUpdate?.()
     } finally {
       setSavingName(false)
       setEditingName(false)
@@ -141,54 +202,203 @@ export function ChatWindow({ conversationId, conversation, onConversationUpdate 
     }
   }
 
+  // ── Conversation-level actions ──
+
+  async function patchConversation(patch: Record<string, unknown>) {
+    await fetch(`/api/conversations/${conversationId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    })
+    onConversationUpdate?.()
+  }
+
+  async function handleHeaderAction(
+    action: "archive" | "unarchive" | "pin" | "unpin" | "favorite" | "unfavorite" | "delete"
+  ) {
+    setHeaderMenuOpen(false)
+    if (action === "delete") {
+      if (!confirm(`Apagar a conversa com "${resolvedName}"? Esta ação não pode ser desfeita.`)) return
+      await fetch(`/api/conversations/${conversationId}`, { method: "DELETE" })
+      onDelete?.()
+      return
+    }
+    const patch: Record<string, boolean> = {}
+    if (action === "archive") patch.archived = true
+    if (action === "unarchive") patch.archived = false
+    if (action === "pin") patch.pinned = true
+    if (action === "unpin") patch.pinned = false
+    if (action === "favorite") patch.favorite = true
+    if (action === "unfavorite") patch.favorite = false
+    await patchConversation(patch)
+  }
+
+  // ── Pin message ──
+
+  async function handlePinMessage(msgId: string) {
+    const newPinnedId = conversation.pinnedMessageId === msgId ? null : msgId
+    await patchConversation({ pinnedMessageId: newPinnedId })
+  }
+
+  const pinnedMessage = messages.find((m) => m.id === conversation.pinnedMessageId) ?? null
+
+  // ── Render ──
+
   return (
     <div className="flex h-full flex-col">
-      <div className="shrink-0 border-b border-gray-700/50 px-6 py-4">
-        {editingName ? (
+
+      {/* ── Header ── */}
+      <div className="shrink-0 border-b border-gray-700/50 px-4 py-3">
+        {searchOpen ? (
+          /* Search bar replaces header content */
           <div className="flex items-center gap-2">
-            <input
-              ref={nameInputRef}
-              value={nameInput}
-              onChange={(e) => setNameInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") saveName()
-                if (e.key === "Escape") cancelEditing()
-              }}
-              disabled={savingName}
-              className="flex-1 rounded border border-gray-600 bg-gray-800 px-2 py-0.5 text-sm font-semibold text-white outline-none focus:border-blue-500"
-            />
-            <button
-              onClick={saveName}
-              disabled={savingName}
-              className="text-green-400 hover:text-green-300 disabled:opacity-50"
-              title="Salvar"
-            >
-              <Check className="h-4 w-4" />
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-500 pointer-events-none" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") navMatch(e.shiftKey ? -1 : 1)
+                  if (e.key === "Escape") closeSearch()
+                }}
+                placeholder="Buscar na conversa..."
+                className="w-full pl-8 pr-3 py-1.5 text-sm bg-gray-800 border border-gray-700 text-white rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder:text-gray-500"
+              />
+            </div>
+            {matchIds.length > 0 && (
+              <span className="text-xs text-gray-400 shrink-0">
+                {matchCursor + 1}/{matchIds.length}
+              </span>
+            )}
+            {searchQuery && matchIds.length === 0 && (
+              <span className="text-xs text-gray-500 shrink-0">Sem resultados</span>
+            )}
+            <button type="button" onClick={() => navMatch(-1)} disabled={matchIds.length === 0} className="p-1 text-gray-400 hover:text-white disabled:opacity-30">
+              <ChevronUp className="h-4 w-4" />
             </button>
-            <button
-              onClick={cancelEditing}
-              disabled={savingName}
-              className="text-gray-500 hover:text-gray-300 disabled:opacity-50"
-              title="Cancelar"
-            >
+            <button type="button" onClick={() => navMatch(1)} disabled={matchIds.length === 0} className="p-1 text-gray-400 hover:text-white disabled:opacity-30">
+              <ChevronDown className="h-4 w-4" />
+            </button>
+            <button type="button" onClick={closeSearch} className="p-1 text-gray-400 hover:text-white">
               <X className="h-4 w-4" />
             </button>
           </div>
         ) : (
-          <div className="flex items-center gap-1.5 group">
-            <h3 className="font-semibold text-white">{resolvedName}</h3>
-            <button
-              onClick={startEditing}
-              className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-gray-300 transition-opacity"
-              title="Editar nome"
-            >
-              <Pencil className="h-3.5 w-3.5" />
-            </button>
+          /* Normal header */
+          <div className="flex items-center gap-3">
+            {/* Name + phone */}
+            <div className="flex-1 min-w-0">
+              {editingName ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={nameInputRef}
+                    value={nameInput}
+                    onChange={(e) => setNameInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") saveName()
+                      if (e.key === "Escape") cancelEditing()
+                    }}
+                    disabled={savingName}
+                    className="flex-1 rounded border border-gray-600 bg-gray-800 px-2 py-0.5 text-sm font-semibold text-white outline-none focus:border-blue-500"
+                  />
+                  <button onClick={saveName} disabled={savingName} className="text-green-400 hover:text-green-300 disabled:opacity-50">
+                    <Check className="h-4 w-4" />
+                  </button>
+                  <button onClick={cancelEditing} disabled={savingName} className="text-gray-500 hover:text-gray-300 disabled:opacity-50">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 group">
+                  <h3 className="font-semibold text-white truncate">{resolvedName}</h3>
+                  <button onClick={startEditing} className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-gray-300 transition-opacity shrink-0">
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )}
+              <p className="text-xs text-gray-500">{conversation.phoneNumber}</p>
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={openSearch}
+                className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700/50 transition-colors"
+                title="Buscar na conversa"
+              >
+                <Search className="h-4 w-4" />
+              </button>
+
+              {/* 3-dot menu */}
+              <div ref={headerMenuRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => setHeaderMenuOpen((v) => !v)}
+                  className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700/50 transition-colors"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </button>
+
+                {headerMenuOpen && (
+                  <div className="absolute right-0 top-10 z-50 w-48 rounded-lg border border-gray-700 bg-gray-900 shadow-2xl py-1">
+                    <button type="button" onClick={() => handleHeaderAction(conversation.pinned ? "unpin" : "pin")}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white">
+                      <Pin className="h-4 w-4" />
+                      {conversation.pinned ? "Desfixar conversa" : "Fixar conversa"}
+                    </button>
+                    <button type="button" onClick={() => handleHeaderAction(conversation.favorite ? "unfavorite" : "favorite")}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white">
+                      <Star className="h-4 w-4" />
+                      {conversation.favorite ? "Remover dos Favoritos" : "Adicionar aos Favoritos"}
+                    </button>
+                    <button type="button" onClick={() => handleHeaderAction(conversation.archived ? "unarchive" : "archive")}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white">
+                      <Archive className="h-4 w-4" />
+                      {conversation.archived ? "Desarquivar" : "Arquivar conversa"}
+                    </button>
+                    <div className="border-t border-gray-800 my-1" />
+                    <button type="button" onClick={() => handleHeaderAction("delete")}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-400 hover:bg-gray-800 hover:text-red-300">
+                      <Trash2 className="h-4 w-4" />
+                      Apagar conversa
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
-        <p className="text-xs text-gray-500">{conversation.phoneNumber}</p>
       </div>
 
+      {/* ── Pinned message banner ── */}
+      {pinnedMessage && !searchOpen && (
+        <div className="shrink-0 flex items-center gap-3 bg-yellow-500/10 border-b border-yellow-500/20 px-4 py-2">
+          <Pin className="h-3.5 w-3.5 text-yellow-400 shrink-0" />
+          <div
+            className="flex-1 min-w-0 cursor-pointer"
+            onClick={() => {
+              const idx = messages.findIndex((m) => m.id === pinnedMessage.id)
+              if (idx >= 0) matchRefs.current[idx]?.scrollIntoView({ behavior: "smooth", block: "center" })
+            }}
+          >
+            <p className="text-[10px] text-yellow-400 font-medium mb-0.5">Mensagem fixada</p>
+            <p className="text-xs text-gray-300 truncate">{pinnedMessage.content}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => patchConversation({ pinnedMessageId: null })}
+            className="shrink-0 p-1 text-gray-500 hover:text-gray-300"
+            title="Desafixar"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* ── Queue status banners ── */}
       {queuePaused && (
         <div className="shrink-0 flex items-center gap-2 bg-red-500/10 border-b border-red-500/20 px-6 py-2 text-sm text-red-400">
           <AlertTriangle className="h-4 w-4 shrink-0" />
@@ -202,19 +412,41 @@ export function ChatWindow({ conversationId, conversation, onConversationUpdate 
         </div>
       )}
 
+      {/* ── Messages ── */}
       <div className="flex-1 overflow-y-auto px-6 py-4">
         <div className="space-y-3">
           {messages.length === 0 ? (
-            <p className="py-8 text-center text-sm text-gray-600">
-              Nenhuma mensagem ainda. Inicie a conversa!
-            </p>
+            <p className="py-8 text-center text-sm text-gray-600">Nenhuma mensagem ainda. Inicie a conversa!</p>
           ) : (
-            messages.map((msg) => <MessageBubble key={msg.id} message={msg} />)
+            messages.map((msg, idx) => {
+              const isMatch = searchQuery && matchIds.includes(msg.id)
+              const isCurrentMatch = isMatch && matchIds[matchCursor] === msg.id
+              return (
+                <div
+                  key={msg.id}
+                  ref={(el) => {
+                    matchRefs.current[idx] = el
+                    // also index by match position
+                    const matchIdx = matchIds.indexOf(msg.id)
+                    if (matchIdx >= 0) matchRefs.current[matchIdx] = el
+                  }}
+                  className={isCurrentMatch ? "rounded-lg ring-2 ring-blue-400/40 ring-offset-2 ring-offset-gray-900" : ""}
+                >
+                  <MessageBubble
+                    message={msg}
+                    isPinned={msg.id === conversation.pinnedMessageId}
+                    highlight={searchQuery.trim() || undefined}
+                    onPin={() => handlePinMessage(msg.id)}
+                  />
+                </div>
+              )
+            })
           )}
           <div ref={bottomRef} />
         </div>
       </div>
 
+      {/* ── Input ── */}
       <div className="shrink-0 border-t border-gray-700/50 px-6 py-4">
         <form onSubmit={sendMessage} className="flex gap-3">
           <input

@@ -194,6 +194,7 @@ model Conversation {
   archived            Boolean  @default(false)
   pinned              Boolean  @default(false)
   favorite            Boolean  @default(false)
+  pinnedMessageId     String?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 

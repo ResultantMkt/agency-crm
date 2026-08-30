@@ -379,6 +379,7 @@ export default function ChatPage() {
             conversationId={selectedConversation.id}
             conversation={selectedConversation}
             onConversationUpdate={fetchConversations}
+            onDelete={() => { setSelectedId(null); fetchConversations() }}
           />
         ) : (
           <div className="flex h-full flex-col items-center justify-center gap-3 text-gray-600">
