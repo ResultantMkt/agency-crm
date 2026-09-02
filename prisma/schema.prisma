@@ -63,14 +63,16 @@ enum MessageQueueStatus {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  name      String
-  email     String   @unique
-  password  String
-  role      Role     @default(MEMBER)
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String    @id @default(cuid())
+  name            String
+  email           String    @unique
+  password        String
+  role            Role      @default(MEMBER)
+  active          Boolean   @default(true)
+  lastSeenCrmAt   DateTime?
+  lastSeenChatsAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   assignedLeads Lead[]        @relation("AssignedLeads")
   assignedTasks Task[]        @relation("AssignedTasks")
@@ -216,6 +218,7 @@ model Message {
   mediaType      String?
   mediaUrl       String?   @db.Text
   mediaName      String?
+  reactions      Json      @default("{}")
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   queueEntry   MessageQueue?

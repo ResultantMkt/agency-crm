@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -57,8 +57,20 @@ function isGroupActive(pathname: string, activeWhen: string[]): boolean {
   return activeWhen.some((prefix) => pathname.startsWith(prefix))
 }
 
+function markSeen(section: "crm" | "chats") {
+  fetch("/api/notifications/mark-seen", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ section }),
+  }).catch(() => {})
+}
+
 export function Sidebar({ overdueCount = 0 }: SidebarProps) {
   const pathname = usePathname()
+  const pathnameRef = useRef(pathname)
+
+  const [crmCount, setCrmCount] = useState(0)
+  const [chatsCount, setChatsCount] = useState(0)
 
   const comercialActive = isGroupActive(pathname, [
     "/comercial",
@@ -72,6 +84,41 @@ export function Sidebar({ overdueCount = 0 }: SidebarProps) {
     comercial: comercialActive,
     settings: settingsActive,
   })
+
+  // Keep ref in sync with current pathname (for use inside polling closure)
+  useEffect(() => {
+    pathnameRef.current = pathname
+  }, [pathname])
+
+  // Mark section as seen and clear badge optimistically when user navigates there
+  useEffect(() => {
+    if (isActiveLink(pathname, "/crm")) {
+      setCrmCount(0)
+      markSeen("crm")
+    }
+    if (isActiveLink(pathname, "/chat")) {
+      setChatsCount(0)
+      markSeen("chats")
+    }
+  }, [pathname])
+
+  // Poll for unread counts every 20 s; skip update if user is already on that section
+  useEffect(() => {
+    function fetchCounts() {
+      fetch("/api/notifications/counts")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (!data) return
+          if (!isActiveLink(pathnameRef.current, "/crm")) setCrmCount(data.crm ?? 0)
+          if (!isActiveLink(pathnameRef.current, "/chat")) setChatsCount(data.chats ?? 0)
+        })
+        .catch(() => {})
+    }
+
+    fetchCounts()
+    const id = setInterval(fetchCounts, 20_000)
+    return () => clearInterval(id)
+  }, []) // intentionally runs once; pathnameRef keeps it current
 
   function toggle(key: string) {
     setExpanded((prev) => ({ ...prev, [key]: !prev[key] }))
@@ -92,8 +139,8 @@ export function Sidebar({ overdueCount = 0 }: SidebarProps) {
       activeWhen: ["/comercial", "/crm", "/chat", "/tasks"],
       children: [
         { href: "/comercial/dashboard", label: "Dashboard", icon: BarChart2 },
-        { href: "/crm", label: "CRM", icon: Kanban },
-        { href: "/chat", label: "Chats", icon: MessageSquare },
+        { href: "/crm", label: "CRM", icon: Kanban, badge: crmCount },
+        { href: "/chat", label: "Chats", icon: MessageSquare, badge: chatsCount },
         {
           href: "/tasks",
           label: "Tarefas",

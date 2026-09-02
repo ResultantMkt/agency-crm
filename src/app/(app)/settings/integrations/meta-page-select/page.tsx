@@ -27,7 +27,10 @@ export default function MetaPageSelectPage() {
       return
     }
     try {
-      const decoded: MetaPage[] = JSON.parse(atob(encoded))
+      // atob returns a Latin-1 string; TextDecoder correctly interprets the
+      // raw bytes as UTF-8, preserving accented characters from the Meta API.
+      const bytes = Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0))
+      const decoded: MetaPage[] = JSON.parse(new TextDecoder("utf-8").decode(bytes))
       setPages(decoded)
     } catch {
       setExpired(true)
