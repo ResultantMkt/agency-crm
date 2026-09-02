@@ -1,4 +1,5 @@
 import { findOrCreateLead } from "@/lib/lead-capture"
+import { prisma } from "@/lib/prisma"
 import { normalizePhone } from "@/lib/zapi"
 import { NextRequest } from "next/server"
 
@@ -104,9 +105,15 @@ export async function POST(request: NextRequest) {
 async function processLeadgen(
   leadgenId: string
 ): Promise<{ leadId: string; created: boolean }> {
-  const accessToken = process.env.META_PAGE_ACCESS_TOKEN
+  // Prefer token saved via OAuth; fall back to env var during transition
+  const metaIntegration = await prisma.integration.findUnique({ where: { name: "META_LEADGEN" } })
+  const integrationConfig = metaIntegration?.config as Record<string, string> | null
+  const accessToken = integrationConfig?.pageAccessToken ?? process.env.META_PAGE_ACCESS_TOKEN
+
   if (!accessToken) {
-    throw new Error("META_PAGE_ACCESS_TOKEN não configurado")
+    throw new Error(
+      "Nenhum token de acesso do Meta configurado — conecte via Configurações > Integrações ou defina META_PAGE_ACCESS_TOKEN"
+    )
   }
 
   // Buscar dados completos do lead via Graph API

@@ -13,7 +13,18 @@ import {
   WifiOff,
   Loader2,
   QrCode,
+  AlertTriangle,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react"
+
+function MetaIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12 2C6.477 2 2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.879V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.989C18.343 21.129 22 16.99 22 12c0-5.523-4.477-10-10-10z" />
+    </svg>
+  )
+}
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -90,6 +101,13 @@ export default function IntegrationsPage() {
   const [queueSaveError, setQueueSaveError] = useState<string | null>(null)
   const [showQueueSettings, setShowQueueSettings] = useState(false)
 
+  // Meta Lead Ads state
+  const [metaConnected, setMetaConnected] = useState(false)
+  const [metaDisconnecting, setMetaDisconnecting] = useState(false)
+  const [metaPageName, setMetaPageName] = useState<string | null>(null)
+  const [metaConnectedAt, setMetaConnectedAt] = useState<string | null>(null)
+  const [metaFlash, setMetaFlash] = useState<{ type: "success" | "error"; message: string } | null>(null)
+
   // Respondi state
   const [webhookOrigin, setWebhookOrigin] = useState("")
   const [copied, setCopied] = useState(false)
@@ -119,6 +137,20 @@ export default function IntegrationsPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       setWebhookOrigin(window.location.origin)
+
+      // Handle OAuth callback result from Meta
+      const search = new URLSearchParams(window.location.search)
+      const metaParam = search.get("meta")
+      if (metaParam === "connected") {
+        const page = search.get("page") ?? "Página conectada"
+        setMetaFlash({ type: "success", message: `Conectado com sucesso à página "${page}"` })
+        // Clean the URL without reloading
+        window.history.replaceState({}, "", window.location.pathname)
+      } else if (metaParam === "error") {
+        const msg = search.get("message") ?? "Erro desconhecido"
+        setMetaFlash({ type: "error", message: msg })
+        window.history.replaceState({}, "", window.location.pathname)
+      }
     }
 
     async function loadIntegrations() {
@@ -143,6 +175,13 @@ export default function IntegrationsPage() {
         if (gc?.config) {
           setGcClientId(gc.config.clientId ?? "")
           setGcClientSecret(gc.config.clientSecret ?? "")
+        }
+
+        const meta = integrations.find((i) => i.name === "META_LEADGEN")
+        if (meta?.config?.pageAccessToken) {
+          setMetaConnected(true)
+          setMetaPageName(meta.config.pageName ?? null)
+          setMetaConnectedAt(meta.config.connectedAt ?? meta.updatedAt)
         }
       } catch {
         // silently ignore
@@ -324,6 +363,22 @@ export default function IntegrationsPage() {
       setZapiError
     )
     if (ok && zapiInstanceId && zapiToken && zapiClientToken) fetchWaStatus()
+  }
+
+  async function handleMetaDisconnect() {
+    setMetaDisconnecting(true)
+    try {
+      const res = await fetch("/api/meta/disconnect", { method: "DELETE" })
+      if (!res.ok) throw new Error("Erro ao desconectar")
+      setMetaConnected(false)
+      setMetaPageName(null)
+      setMetaConnectedAt(null)
+      setMetaFlash({ type: "success", message: "Conta do Meta desconectada." })
+    } catch (err) {
+      setMetaFlash({ type: "error", message: err instanceof Error ? err.message : "Erro ao desconectar" })
+    } finally {
+      setMetaDisconnecting(false)
+    }
   }
 
   async function handleCopyWebhook() {
@@ -780,7 +835,132 @@ export default function IntegrationsPage() {
           </CardContent>
         </Card>
 
-        {/* Card 3: Respondi Forms */}
+        {/* Card 3: Meta Lead Ads */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600/10 border border-blue-600/20">
+                  <MetaIcon className="h-5 w-5 text-blue-500" />
+                </div>
+                <CardTitle>Meta Lead Ads</CardTitle>
+              </div>
+              {metaConnected ? (
+                <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 gap-1.5">
+                  <Wifi className="h-3 w-3" />
+                  Conectado
+                </Badge>
+              ) : (
+                <Badge className="bg-gray-500/20 text-gray-400 border border-gray-500/30 gap-1.5">
+                  <WifiOff className="h-3 w-3" />
+                  Desconectado
+                </Badge>
+              )}
+            </div>
+            <CardDescription className="mt-2">
+              Receba leads dos formulários nativos do Facebook/Instagram automaticamente no CRM via OAuth.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+
+            {metaFlash && (
+              <div
+                className={`flex items-start gap-2 rounded-lg border px-3 py-2 text-sm ${
+                  metaFlash.type === "success"
+                    ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
+                    : "border-red-500/20 bg-red-500/10 text-red-400"
+                }`}
+              >
+                {metaFlash.type === "success" ? (
+                  <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0" />
+                ) : (
+                  <XCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                )}
+                <span>{metaFlash.message}</span>
+                <button
+                  type="button"
+                  onClick={() => setMetaFlash(null)}
+                  className="ml-auto shrink-0 opacity-60 hover:opacity-100 transition-opacity"
+                >
+                  ×
+                </button>
+              </div>
+            )}
+
+            {metaConnected && metaPageName ? (
+              <div className="space-y-3">
+                <div className="rounded-lg border border-gray-700 bg-gray-800/50 px-4 py-3 space-y-1.5">
+                  <p className="text-xs text-gray-400">Página conectada</p>
+                  <p className="text-sm font-medium text-white">{metaPageName}</p>
+                  {metaConnectedAt && (
+                    <p className="text-xs text-gray-500">
+                      Conectado em{" "}
+                      {new Date(metaConnectedAt).toLocaleString("pt-BR", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  )}
+                </div>
+
+                <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 px-4 py-3 text-xs text-blue-300 space-y-1">
+                  <p className="font-medium">Todos os formulários de lead da página sincronizam automaticamente.</p>
+                  <p className="text-blue-400/70">O token de página gerado via OAuth não tem prazo de expiração definido. Reconecte caso os leads parem de chegar.</p>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1 text-blue-400 border-blue-500/30 hover:bg-blue-500/10"
+                    onClick={() => { window.location.href = "/api/meta/oauth/start" }}
+                  >
+                    Reconectar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1 text-red-400 border-red-500/30 hover:bg-red-500/10"
+                    disabled={metaDisconnecting}
+                    onClick={handleMetaDisconnect}
+                  >
+                    {metaDisconnecting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Desconectando...
+                      </>
+                    ) : (
+                      <>
+                        <WifiOff className="h-4 w-4 mr-2" />
+                        Desconectar
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="rounded-lg border border-yellow-500/20 bg-yellow-500/5 px-4 py-3 text-sm text-yellow-300 flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                  <span>
+                    Conecte sua conta do Meta para receber leads automaticamente dos formulários de Lead Ads.
+                  </span>
+                </div>
+
+                <Button
+                  className="w-full bg-blue-600 hover:bg-blue-500 text-white"
+                  onClick={() => { window.location.href = "/api/meta/oauth/start" }}
+                >
+                  <MetaIcon className="h-4 w-4 mr-2" />
+                  Conectar com Meta
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Card 4: Respondi Forms */}
         <Card>
           <CardHeader>
             <div className="flex items-center gap-3">
