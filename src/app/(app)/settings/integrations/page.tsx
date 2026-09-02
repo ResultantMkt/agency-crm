@@ -105,6 +105,7 @@ export default function IntegrationsPage() {
   const [metaConnected, setMetaConnected] = useState(false)
   const [metaDisconnecting, setMetaDisconnecting] = useState(false)
   const [metaPageName, setMetaPageName] = useState<string | null>(null)
+  const [metaPageId, setMetaPageId] = useState<string | null>(null)
   const [metaConnectedAt, setMetaConnectedAt] = useState<string | null>(null)
   const [metaFlash, setMetaFlash] = useState<{ type: "success" | "error"; message: string } | null>(null)
 
@@ -181,6 +182,7 @@ export default function IntegrationsPage() {
         if (meta?.config?.pageAccessToken) {
           setMetaConnected(true)
           setMetaPageName(meta.config.pageName ?? null)
+          setMetaPageId(meta.config.pageId ?? null)
           setMetaConnectedAt(meta.config.connectedAt ?? meta.updatedAt)
         }
       } catch {
@@ -372,6 +374,7 @@ export default function IntegrationsPage() {
       if (!res.ok) throw new Error("Erro ao desconectar")
       setMetaConnected(false)
       setMetaPageName(null)
+      setMetaPageId(null)
       setMetaConnectedAt(null)
       setMetaFlash({ type: "success", message: "Conta do Meta desconectada." })
     } catch (err) {
@@ -892,6 +895,9 @@ export default function IntegrationsPage() {
                 <div className="rounded-lg border border-gray-700 bg-gray-800/50 px-4 py-3 space-y-1.5">
                   <p className="text-xs text-gray-400">Página conectada</p>
                   <p className="text-sm font-medium text-white">{metaPageName}</p>
+                  {metaPageId && (
+                    <p className="text-xs text-gray-500 font-mono">ID: {metaPageId}</p>
+                  )}
                   {metaConnectedAt && (
                     <p className="text-xs text-gray-500">
                       Conectado em{" "}
