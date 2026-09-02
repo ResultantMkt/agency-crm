@@ -170,12 +170,20 @@ async function processLeadgen(
     )
   }
 
+  // Format all form answers into readable notes
+  const fieldLines = (data.field_data ?? [])
+    .map((f) => `- ${f.name.replace(/_/g, " ")}: ${f.values[0] ?? ""}`)
+    .join("\n")
+
+  const notes =
+    `Lead gerado via Meta Lead Ads (leadgen_id: ${leadgenId})\n\nRespostas do formulário:\n${fieldLines}`
+
   const { leadId, created } = await findOrCreateLead({
     name: name ?? normalizedPhone ?? email ?? "Lead Meta",
     phone: normalizedPhone ?? "",
     email: email ?? null,
     source: "TRAFFIC",
-    notes: `Lead gerado via Meta Lead Ads (leadgen_id: ${leadgenId})`,
+    notes,
   })
 
   console.log(
