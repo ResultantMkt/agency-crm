@@ -48,9 +48,20 @@ export async function POST(request: NextRequest) {
 
   console.log("[meta-leadgen webhook] Payload recebido:", JSON.stringify(body, null, 2))
 
-  // Extrair todos os leadgen_ids do payload
+  // Load integration config once for the entire batch
+  const metaIntegration = await prisma.integration.findUnique({ where: { name: "META_LEADGEN" } })
+  const integrationConfig = metaIntegration?.config as Record<string, string> | null
+  const accessToken = integrationConfig?.pageAccessToken ?? process.env.META_PAGE_ACCESS_TOKEN
+  const connectedPageId = integrationConfig?.pageId ?? process.env.META_PAGE_ID ?? null
+
+  if (!accessToken) {
+    console.error("[meta-leadgen webhook] Nenhum token configurado — conecte via Configurações > Integrações")
+    return Response.json({ ok: true })
+  }
+
+  // Extrair todos os leadgen_ids do payload junto com seus page_ids
   // Estrutura: { object: "page", entry: [{ changes: [{ value: { leadgen_id, page_id }, field: "leadgen" }] }] }
-  const leadgenIds: string[] = []
+  const events: Array<{ leadgenId: string; pageId: string }> = []
 
   try {
     const payload = body as {
@@ -69,27 +80,41 @@ export async function POST(request: NextRequest) {
     for (const entry of payload.entry ?? []) {
       for (const change of entry.changes ?? []) {
         if (change.field === "leadgen" && change.value?.leadgen_id) {
-          leadgenIds.push(change.value.leadgen_id)
+          events.push({
+            leadgenId: change.value.leadgen_id,
+            pageId: change.value.page_id ?? "",
+          })
         }
       }
     }
   } catch (err) {
     console.error("[meta-leadgen webhook] Erro ao parsear estrutura do payload:", err)
-    return Response.json({ ok: true }) // Responde 200 para o Meta não reenviar
+    return Response.json({ ok: true })
   }
 
-  if (leadgenIds.length === 0) {
+  if (events.length === 0) {
     console.warn("[meta-leadgen webhook] Nenhum leadgen_id encontrado no payload")
     return Response.json({ ok: true })
   }
 
-  console.log(`[meta-leadgen webhook] leadgen_ids encontrados: ${leadgenIds.join(", ")}`)
+  console.log(
+    `[meta-leadgen webhook] Eventos recebidos: ${events.map((e) => `leadgen_id=${e.leadgenId} page_id=${e.pageId}`).join(", ")}`
+  )
 
-  const results: { leadgenId: string; leadId?: string; created?: boolean; error?: string }[] = []
+  const results: { leadgenId: string; leadId?: string; created?: boolean; skipped?: boolean; error?: string }[] = []
 
-  for (const leadgenId of leadgenIds) {
+  for (const { leadgenId, pageId } of events) {
+    // Security: ignore events from pages other than the connected one
+    if (connectedPageId && pageId && pageId !== connectedPageId) {
+      console.warn(
+        `[meta-leadgen webhook] Lead ignorado — page_id ${pageId} não corresponde à integração ativa (${connectedPageId}). leadgen_id=${leadgenId}`
+      )
+      results.push({ leadgenId, skipped: true })
+      continue
+    }
+
     try {
-      const result = await processLeadgen(leadgenId)
+      const result = await processLeadgen(leadgenId, accessToken)
       results.push({ leadgenId, ...result })
     } catch (err) {
       console.error(`[meta-leadgen webhook] Erro ao processar leadgen_id=${leadgenId}:`, err)
@@ -103,19 +128,9 @@ export async function POST(request: NextRequest) {
 // ── Processamento individual de cada leadgen_id ───────────────────────────────
 
 async function processLeadgen(
-  leadgenId: string
+  leadgenId: string,
+  accessToken: string
 ): Promise<{ leadId: string; created: boolean }> {
-  // Prefer token saved via OAuth; fall back to env var during transition
-  const metaIntegration = await prisma.integration.findUnique({ where: { name: "META_LEADGEN" } })
-  const integrationConfig = metaIntegration?.config as Record<string, string> | null
-  const accessToken = integrationConfig?.pageAccessToken ?? process.env.META_PAGE_ACCESS_TOKEN
-
-  if (!accessToken) {
-    throw new Error(
-      "Nenhum token de acesso do Meta configurado — conecte via Configurações > Integrações ou defina META_PAGE_ACCESS_TOKEN"
-    )
-  }
-
   // Buscar dados completos do lead via Graph API
   const url = `https://graph.facebook.com/v21.0/${leadgenId}?access_token=${accessToken}`
   const res = await fetch(url)
