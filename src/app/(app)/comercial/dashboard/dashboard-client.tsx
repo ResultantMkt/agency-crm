@@ -7,6 +7,7 @@ import { Pencil, Check, X, CalendarDays, ChevronLeft, ChevronRight } from "lucid
 
 interface Metrics {
   period: { dateFrom: string; dateTo: string; key: string }
+  stages?: { key: string; name: string; position: number }[]
   funnel: Record<string, number>
   acquisition: {
     newClients: number
@@ -65,28 +66,6 @@ function formatDisplayDate(s: string): string {
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-
-const STAGE_LABELS: Record<string, string> = {
-  LEAD: "Leads",
-  MQL: "MQL",
-  SCREENING_SCHEDULED: "Triagem Ag.",
-  SCREENING_DONE: "Triagem Real.",
-  CLOSING_MEETING: "Reun. Fechamento",
-  PROPOSAL_SENT: "Proposta Enviada",
-  CLOSED: "Fechamento",
-  LOST: "Perdidos",
-}
-
-const STAGE_ORDER = [
-  "LEAD",
-  "MQL",
-  "SCREENING_SCHEDULED",
-  "SCREENING_DONE",
-  "CLOSING_MEETING",
-  "PROPOSAL_SENT",
-  "CLOSED",
-  "LOST",
-] as const
 
 const MONTH_NAMES_PT = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -458,7 +437,8 @@ export function DashboardClient() {
   const acq = metrics?.acquisition
   const conv = metrics?.conversionRates
 
-  const stageValues = STAGE_ORDER.map((s) => funnel[s] ?? 0)
+  const stageOrder = [...(metrics?.stages ?? [])].sort((a, b) => a.position - b.position)
+  const stageValues = stageOrder.map((s) => funnel[s.key] ?? 0)
   const maxCount = Math.max(...stageValues, 1)
 
   return (
@@ -491,8 +471,8 @@ export function DashboardClient() {
               Pipeline
             </h3>
             <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4 xl:grid-cols-8">
-              {STAGE_ORDER.map((stage) => (
-                <StageCard key={stage} label={STAGE_LABELS[stage]} count={funnel[stage] ?? 0} />
+              {stageOrder.map((s) => (
+                <StageCard key={s.key} label={s.name} count={funnel[s.key] ?? 0} />
               ))}
             </div>
 
@@ -502,8 +482,8 @@ export function DashboardClient() {
                 Barras relativas ao estágio com maior volume no período
               </p>
               <div className="space-y-4">
-                {STAGE_ORDER.map((stage) => (
-                  <FunnelBar key={stage} label={STAGE_LABELS[stage]} count={funnel[stage] ?? 0} maxCount={maxCount} />
+                {stageOrder.map((s) => (
+                  <FunnelBar key={s.key} label={s.name} count={funnel[s.key] ?? 0} maxCount={maxCount} />
                 ))}
               </div>
             </div>

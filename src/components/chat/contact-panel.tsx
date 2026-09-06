@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { X, ExternalLink, Plus, Phone, User, Layers, FileText, Calendar, CheckCircle2, Circle, AlertCircle, Check, Pencil } from "lucide-react"
-import type { Lead, LeadSource, LeadStage, User as UserType } from "@/types/models"
+import type { Lead, LeadSource, PipelineStage, User as UserType } from "@/types/models"
 import { isTaskOverdue } from "@/lib/date-utils"
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
@@ -22,28 +22,15 @@ const SOURCE_LABELS: Record<LeadSource, string> = {
   OTHER: "Outro",
 }
 
-const STAGE_OPTIONS: { value: LeadStage; label: string }[] = [
-  { value: "LEAD", label: "Lead" },
-  { value: "MQL", label: "MQL" },
-  { value: "SCREENING_SCHEDULED", label: "Triagem Agendada" },
-  { value: "SCREENING_DONE", label: "Triagem Realizada" },
-  { value: "CLOSING_MEETING", label: "Reun. Fechamento" },
-  { value: "PROPOSAL_SENT", label: "Proposta Enviada" },
-  { value: "CLOSED", label: "Fechamento" },
-  { value: "LOST", label: "Perdido" },
-]
-
-const STAGE_LABELS: Record<LeadStage, string> = Object.fromEntries(STAGE_OPTIONS.map((o) => [o.value, o.label])) as Record<LeadStage, string>
-
-const STAGE_COLORS: Record<LeadStage, string> = {
-  LEAD: "bg-gray-600 text-gray-800",
-  MQL: "bg-purple-600/70 text-blue-200",
-  SCREENING_SCHEDULED: "bg-indigo-600/70 text-indigo-200",
-  SCREENING_DONE: "bg-violet-600/70 text-violet-200",
-  CLOSING_MEETING: "bg-purple-600/70 text-purple-200",
-  PROPOSAL_SENT: "bg-amber-600/70 text-amber-200",
-  CLOSED: "bg-green-600/70 text-green-200",
-  LOST: "bg-red-600/70 text-red-200",
+const FIXED_COLORS: Record<string, string> = {
+  LEAD: "bg-gray-500/20 text-gray-600",
+  MQL: "bg-purple-500/20 text-purple-700",
+  SCREENING_SCHEDULED: "bg-yellow-500/20 text-yellow-600",
+  SCREENING_DONE: "bg-orange-500/20 text-orange-600",
+  CLOSING_MEETING: "bg-violet-500/20 text-violet-600",
+  PROPOSAL_SENT: "bg-purple-500/20 text-purple-500",
+  CLOSED: "bg-emerald-500/20 text-emerald-600",
+  LOST: "bg-red-500/20 text-red-600",
 }
 
 function formatDate(d: string) {
@@ -122,6 +109,7 @@ export function ContactPanel({ conversationId, name, phone, photoUrl, onClose, o
   const router = useRouter()
   const [lead, setLead] = useState<(Lead & { assignedTo?: { id: string; name: string } | null; tasks?: PanelTask[] }) | null>(null)
   const [users, setUsers] = useState<UserType[]>([])
+  const [stages, setStages] = useState<PipelineStage[]>([])
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
   const [imgError, setImgError] = useState(false)
@@ -134,7 +122,7 @@ export function ContactPanel({ conversationId, name, phone, photoUrl, onClose, o
 
   const [source, setSource] = useState<LeadSource>("OTHER")
   const [assignedToId, setAssignedToId] = useState<string | null>(null)
-  const [stage, setStage] = useState<LeadStage>("LEAD")
+  const [stage, setStage] = useState<string>("LEAD")
   const [editingField, setEditingField] = useState<"source" | "assignedTo" | "stage" | null>(null)
   const [saving, setSaving] = useState(false)
 
@@ -142,6 +130,10 @@ export function ContactPanel({ conversationId, name, phone, photoUrl, onClose, o
   const [notes, setNotes] = useState("")
   const [notesSaved, setNotesSaved] = useState(false)
   const notesDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    fetch("/api/pipeline-stages").then(r => r.json()).then(setStages)
+  }, [])
 
   useEffect(() => {
     setLoading(true)
@@ -186,7 +178,7 @@ export function ContactPanel({ conversationId, name, phone, photoUrl, onClose, o
     await patchLead({ assignedToId: v ?? null })
   }
 
-  async function handleStageChange(v: LeadStage) {
+  async function handleStageChange(v: string) {
     setStage(v); setEditingField(null)
     await patchLead({ stage: v })
   }
@@ -252,6 +244,8 @@ export function ContactPanel({ conversationId, name, phone, photoUrl, onClose, o
   const assignedUser = users.find((u) => u.id === assignedToId)
   const assignedName = assignedUser?.name ?? lead?.assignedTo?.name ?? null
 
+  const stageLabels = Object.fromEntries(stages.map(s => [s.key, s.name]))
+
   return (
     <div className="w-64 shrink-0 flex flex-col border-l border-gray-200/50 bg-gray-100/40 overflow-y-auto">
 
@@ -311,18 +305,18 @@ export function ContactPanel({ conversationId, name, phone, photoUrl, onClose, o
                   autoFocus
                   className="w-full text-xs bg-gray-200 text-gray-900 rounded px-1.5 py-1 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-purple-500"
                   value={stage}
-                  onChange={(e) => handleStageChange(e.target.value as LeadStage)}
+                  onChange={(e) => handleStageChange(e.target.value)}
                   onBlur={() => setEditingField(null)}
                 >
-                  {STAGE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  {stages.map(s => <option key={s.key} value={s.key}>{s.name}</option>)}
                 </select>
               ) : (
                 <button
                   type="button"
                   onClick={() => setEditingField("stage")}
-                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium group ${STAGE_COLORS[stage]}`}
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium group ${FIXED_COLORS[stage] ?? "bg-gray-500/20 text-gray-600"}`}
                 >
-                  {STAGE_LABELS[stage]}
+                  {stageLabels[stage] ?? stage}
                   <Pencil className="h-2.5 w-2.5 opacity-0 group-hover:opacity-60 transition-opacity" />
                 </button>
               )}

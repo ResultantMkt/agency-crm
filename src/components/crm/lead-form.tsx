@@ -19,7 +19,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select"
-import type { Lead, LeadSource, LeadStage, User } from "@/types/models"
+import type { Lead, LeadSource, PipelineStage, User } from "@/types/models"
 
 const SOURCE_OPTIONS: { value: LeadSource; label: string }[] = [
   { value: "TRAFFIC", label: "Tráfego pago" },
@@ -28,23 +28,13 @@ const SOURCE_OPTIONS: { value: LeadSource; label: string }[] = [
   { value: "OTHER", label: "Outro" },
 ]
 
-const STAGE_OPTIONS: { value: LeadStage; label: string }[] = [
-  { value: "LEAD", label: "Lead" },
-  { value: "MQL", label: "MQL" },
-  { value: "SCREENING_SCHEDULED", label: "Triagem Agendada" },
-  { value: "SCREENING_DONE", label: "Triagem Realizada" },
-  { value: "CLOSING_MEETING", label: "Reunião de Fechamento" },
-  { value: "PROPOSAL_SENT", label: "Proposta Enviada" },
-  { value: "CLOSED", label: "Fechamento" },
-  { value: "LOST", label: "Perdido" },
-]
-
 interface LeadFormProps {
   open: boolean
   onClose: () => void
   onSuccess: (lead: Lead) => void
   lead?: Lead
   users: User[]
+  stages: PipelineStage[]
 }
 
 interface FormState {
@@ -52,7 +42,7 @@ interface FormState {
   phone: string
   email: string
   source: LeadSource
-  stage: LeadStage
+  stage: string
   assignedToId: string
   estimatedValue: string
   notes: string
@@ -69,7 +59,7 @@ const DEFAULT_FORM: FormState = {
   notes: "",
 }
 
-export function LeadForm({ open, onClose, onSuccess, lead, users }: LeadFormProps) {
+export function LeadForm({ open, onClose, onSuccess, lead, users, stages }: LeadFormProps) {
   const [form, setForm] = useState<FormState>(DEFAULT_FORM)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -218,14 +208,14 @@ export function LeadForm({ open, onClose, onSuccess, lead, users }: LeadFormProp
             {/* Stage */}
             <div className="space-y-1.5">
               <Label>Estágio</Label>
-              <Select value={form.stage} onValueChange={(v) => set("stage", v as LeadStage)}>
+              <Select value={form.stage} onValueChange={(v) => set("stage", v)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {STAGE_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
+                  {stages.map((s) => (
+                    <SelectItem key={s.key} value={s.key}>
+                      {s.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

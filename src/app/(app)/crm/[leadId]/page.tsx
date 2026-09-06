@@ -5,7 +5,7 @@ import { ArrowLeft, MessageSquare } from "lucide-react"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { cn } from "@/lib/utils"
-import type { Lead, LeadHistory, Task, LeadStage, User } from "@/types/models"
+import type { Lead, LeadHistory, Task, User } from "@/types/models"
 import { LeadDetailClient } from "./lead-detail-client"
 import { LeadInfoClient } from "./lead-info-client"
 import { LeadTasksClient } from "./lead-tasks-client"
@@ -15,26 +15,23 @@ export const metadata: Metadata = {
   title: "Detalhe do Lead — Agency CRM",
 }
 
-const STAGE_LABELS: Record<LeadStage, string> = {
-  LEAD: "Lead",
-  MQL: "MQL",
-  SCREENING_SCHEDULED: "Triagem Agendada",
-  SCREENING_DONE: "Triagem Realizada",
-  CLOSING_MEETING: "Reunião de Fechamento",
-  PROPOSAL_SENT: "Proposta Enviada",
-  CLOSED: "Fechamento",
-  LOST: "Perdido",
+function stageLabel(stages: any[], key: string) {
+  return stages.find(s => s.key === key)?.name ?? key
 }
 
-const STAGE_COLORS: Record<LeadStage, string> = {
+const DEFAULT_STAGE_COLOR = "bg-gray-500/20 text-gray-600"
+const FIXED_COLORS: Record<string, string> = {
   LEAD: "bg-gray-500/20 text-gray-500",
   MQL: "bg-purple-500/20 text-purple-600",
-  SCREENING_SCHEDULED: "bg-yellow-500/20 text-yellow-400",
-  SCREENING_DONE: "bg-orange-500/20 text-orange-400",
-  CLOSING_MEETING: "bg-violet-500/20 text-violet-400",
-  PROPOSAL_SENT: "bg-purple-500/20 text-purple-400",
-  CLOSED: "bg-emerald-500/20 text-emerald-400",
-  LOST: "bg-red-500/20 text-red-400",
+  SCREENING_SCHEDULED: "bg-yellow-500/20 text-yellow-600",
+  SCREENING_DONE: "bg-orange-500/20 text-orange-600",
+  CLOSING_MEETING: "bg-violet-500/20 text-violet-600",
+  PROPOSAL_SENT: "bg-purple-500/20 text-purple-500",
+  CLOSED: "bg-emerald-500/20 text-emerald-600",
+  LOST: "bg-red-500/20 text-red-600",
+}
+function stageColor(key: string) {
+  return FIXED_COLORS[key] ?? DEFAULT_STAGE_COLOR
 }
 
 export default async function LeadDetailPage({
@@ -47,7 +44,7 @@ export default async function LeadDetailPage({
 
   const { leadId } = await params
 
-  const [rawLead, rawUsers] = await Promise.all([
+  const [rawLead, rawUsers, rawStages] = await Promise.all([
     prisma.lead.findUnique({
       where: { id: leadId },
       include: {
@@ -67,12 +64,14 @@ export default async function LeadDetailPage({
       select: { id: true, name: true, email: true, role: true },
       orderBy: { name: "asc" },
     }),
+    prisma.pipelineStage.findMany({ orderBy: { position: "asc" } }),
   ])
 
   if (!rawLead) notFound()
 
   const lead: Lead & { history: LeadHistory[]; tasks: Task[] } = JSON.parse(JSON.stringify(rawLead))
   const users: User[] = JSON.parse(JSON.stringify(rawUsers))
+  const stages = JSON.parse(JSON.stringify(rawStages))
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -107,10 +106,10 @@ export default async function LeadDetailPage({
         <span
           className={cn(
             "inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold",
-            STAGE_COLORS[lead.stage]
+            stageColor(lead.stage)
           )}
         >
-          {STAGE_LABELS[lead.stage]}
+          {stageLabel(stages, lead.stage)}
         </span>
       </div>
 

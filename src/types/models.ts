@@ -1,5 +1,13 @@
-export type LeadStage = "LEAD" | "MQL" | "SCREENING_SCHEDULED" | "SCREENING_DONE" | "CLOSING_MEETING" | "PROPOSAL_SENT" | "CLOSED" | "LOST"
+export type LeadStage = string
 export type LeadSource = "TRAFFIC" | "PROSPECTING" | "REFERRAL" | "OTHER"
+
+export interface PipelineStage {
+  id: string
+  key: string
+  name: string
+  position: number
+  color: string | null
+}
 export type ClientStatus = "ACTIVE" | "CHURN" | "NOT_RENEWED"
 export type TaskStatus = "PENDING" | "DONE"
 export type ReceivableStatus = "PAID" | "PENDING"

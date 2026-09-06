@@ -3,9 +3,9 @@
 import { useState } from "react"
 import { MessageSquare, Check, X } from "lucide-react"
 import { cn, formatDate } from "@/lib/utils"
-import type { LeadHistory, LeadStage } from "@/types/models"
+import type { LeadHistory } from "@/types/models"
 
-const STAGE_LABELS: Record<LeadStage, string> = {
+const STAGE_LABELS: Record<string, string> = {
   LEAD: "Lead",
   MQL: "MQL",
   SCREENING_SCHEDULED: "Triagem Agendada",
@@ -16,7 +16,7 @@ const STAGE_LABELS: Record<LeadStage, string> = {
   LOST: "Perdido",
 }
 
-const STAGE_COLORS: Record<LeadStage, string> = {
+const STAGE_COLORS: Record<string, string> = {
   LEAD: "bg-gray-500/20 text-gray-500",
   MQL: "bg-purple-500/20 text-purple-600",
   SCREENING_SCHEDULED: "bg-yellow-500/20 text-yellow-400",
@@ -72,14 +72,14 @@ function HistoryItem({ item, leadId, onUpdate }: {
         <div className="flex items-center gap-2 flex-wrap">
           {item.fromStage && (
             <>
-              <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium", STAGE_COLORS[item.fromStage])}>
-                {STAGE_LABELS[item.fromStage]}
+              <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium", STAGE_COLORS[item.fromStage] ?? "bg-gray-500/20 text-gray-600")}>
+                {STAGE_LABELS[item.fromStage] ?? item.fromStage}
               </span>
               <span className="text-gray-500 text-xs">→</span>
             </>
           )}
-          <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium", STAGE_COLORS[item.toStage])}>
-            {STAGE_LABELS[item.toStage]}
+          <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium", STAGE_COLORS[item.toStage] ?? "bg-gray-500/20 text-gray-600")}>
+            {STAGE_LABELS[item.toStage] ?? item.toStage}
           </span>
         </div>
 

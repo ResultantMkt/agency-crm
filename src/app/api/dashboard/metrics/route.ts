@@ -36,7 +36,7 @@ export async function GET(request: Request) {
     const start = startOfDay(dateFrom)
     const end = endOfDay(dateTo)
 
-    const [funnelCurrent, closedInPeriod, trafficIntegration] = await Promise.all([
+    const [funnelCurrent, closedInPeriod, trafficIntegration, stages] = await Promise.all([
       // Leads criados no período, agrupados pelo estágio atual
       prisma.lead.groupBy({
         by: ["stage"],
@@ -56,6 +56,9 @@ export async function GET(request: Request) {
         where: { name: "traffic_investment" },
         select: { config: true },
       }),
+
+      // Estágios do pipeline ordenados por posição
+      prisma.pipelineStage.findMany({ orderBy: { position: "asc" } }),
     ])
 
     const funnel: Record<string, number> = {}
@@ -87,6 +90,7 @@ export async function GET(request: Request) {
 
     return Response.json({
       period: { dateFrom, dateTo, key: periodKey },
+      stages: stages.map(s => ({ key: s.key, name: s.name, position: s.position })),
       funnel,
       acquisition: {
         newClients,

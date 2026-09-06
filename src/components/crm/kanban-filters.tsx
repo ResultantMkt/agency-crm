@@ -3,14 +3,14 @@
 import { useState, useRef, useEffect } from "react"
 import { Filter, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import type { LeadSource, LeadStage, User } from "@/types/models"
+import type { LeadSource, PipelineStage, User } from "@/types/models"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface KanbanFilterState {
   sources: LeadSource[]
   assignedToIds: string[]   // "__unassigned__" = sem responsável
-  stages: LeadStage[]
+  stages: string[]
   createdFrom: string       // YYYY-MM-DD
   createdTo: string         // YYYY-MM-DD
 }
@@ -41,17 +41,6 @@ const SOURCE_OPTIONS: { value: LeadSource; label: string }[] = [
   { value: "OTHER", label: "Outro" },
 ]
 
-const STAGE_OPTIONS: { value: LeadStage; label: string }[] = [
-  { value: "LEAD", label: "Lead" },
-  { value: "MQL", label: "MQL" },
-  { value: "SCREENING_SCHEDULED", label: "Triagem Agendada" },
-  { value: "SCREENING_DONE", label: "Triagem Realizada" },
-  { value: "CLOSING_MEETING", label: "Reun. Fechamento" },
-  { value: "PROPOSAL_SENT", label: "Proposta Enviada" },
-  { value: "CLOSED", label: "Fechamento" },
-  { value: "LOST", label: "Perdido" },
-]
-
 export const UNASSIGNED_ID = "__unassigned__"
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -59,10 +48,11 @@ export const UNASSIGNED_ID = "__unassigned__"
 interface KanbanFiltersProps {
   filters: KanbanFilterState
   users: User[]
+  stages: PipelineStage[]
   onChange: (filters: KanbanFilterState) => void
 }
 
-export function KanbanFilters({ filters, users, onChange }: KanbanFiltersProps) {
+export function KanbanFilters({ filters, users, stages, onChange }: KanbanFiltersProps) {
   const [open, setOpen] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
   const count = countActiveFilters(filters)
@@ -169,13 +159,13 @@ export function KanbanFilters({ filters, users, onChange }: KanbanFiltersProps) 
             {/* Etapa */}
             <FilterSection title="Etapa do funil">
               <div className="grid grid-cols-2 gap-y-2 gap-x-3">
-                {STAGE_OPTIONS.map((o) => (
+                {stages.map((s) => (
                   <FilterCheckbox
-                    key={o.value}
-                    label={o.label}
-                    checked={filters.stages.includes(o.value)}
+                    key={s.key}
+                    label={s.name}
+                    checked={filters.stages.includes(s.key)}
                     onChange={() =>
-                      onChange({ ...filters, stages: toggle(filters.stages, o.value) })
+                      onChange({ ...filters, stages: toggle(filters.stages, s.key) })
                     }
                   />
                 ))}

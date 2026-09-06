@@ -10,33 +10,23 @@ import { LeadCardOverlay } from "./lead-card"
 import { LeadForm } from "./lead-form"
 import { CsvImportModal } from "./csv-import-modal"
 import { KanbanFilters, KanbanFilterState, EMPTY_FILTERS, UNASSIGNED_ID } from "./kanban-filters"
-import type { Lead, LeadStage, User } from "@/types/models"
-
-const STAGES: { stage: LeadStage; label: string }[] = [
-  { stage: "LEAD", label: "Lead" },
-  { stage: "MQL", label: "MQL" },
-  { stage: "SCREENING_SCHEDULED", label: "Triagem Agendada" },
-  { stage: "SCREENING_DONE", label: "Triagem Realizada" },
-  { stage: "CLOSING_MEETING", label: "Reunião de Fechamento" },
-  { stage: "PROPOSAL_SENT", label: "Proposta Enviada" },
-  { stage: "CLOSED", label: "Fechamento" },
-  { stage: "LOST", label: "Perdido" },
-]
-
-const STAGE_IDS = new Set<string>(STAGES.map((s) => s.stage))
+import type { Lead, PipelineStage, User } from "@/types/models"
 
 interface KanbanBoardProps {
   initialLeads: Lead[]
   users: User[]
+  stages: PipelineStage[]
 }
 
-export function KanbanBoard({ initialLeads, users }: KanbanBoardProps) {
+export function KanbanBoard({ initialLeads, users, stages }: KanbanBoardProps) {
   const [leads, setLeads] = useState<Lead[]>(initialLeads)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [formOpen, setFormOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
   const [filters, setFilters] = useState<KanbanFilterState>(EMPTY_FILTERS)
   const [search, setSearch] = useState("")
+
+  const stageKeySet = useMemo(() => new Set(stages.map(s => s.key)), [stages])
 
   const filteredLeads = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -70,7 +60,7 @@ export function KanbanBoard({ initialLeads, users }: KanbanBoardProps) {
   )
 
   const getLeadsForStage = useCallback(
-    (stage: LeadStage) =>
+    (stage: string) =>
       filteredLeads
         .filter((l) => l.stage === stage)
         .sort((a, b) => (a.position ?? 0) - (b.position ?? 0)),
@@ -93,17 +83,17 @@ export function KanbanBoard({ initialLeads, users }: KanbanBoardProps) {
     const overId = over.id as string
 
     // Determine target stage and whether we're hovering over a specific card
-    let targetStage: LeadStage
+    let targetStage: string
     let overLeadId: string | null = null
 
-    if (STAGE_IDS.has(overId)) {
+    if (stageKeySet.has(overId)) {
       // Dropped on the column's droppable area
-      targetStage = overId as LeadStage
+      targetStage = overId
     } else {
       // Dropped on another lead card
       const overLead = leads.find((l) => l.id === overId)
       if (!overLead) return
-      targetStage = overLead.stage
+      targetStage = overLead.stage as string
       overLeadId = overId
     }
 
@@ -186,7 +176,7 @@ export function KanbanBoard({ initialLeads, users }: KanbanBoardProps) {
             className="h-9 pl-9 pr-3 w-48 text-sm bg-white border border-gray-200 text-gray-900 rounded-lg focus:outline-none focus:ring-1 focus:ring-purple-500 placeholder:text-gray-400"
           />
         </div>
-        <KanbanFilters filters={filters} users={users} onChange={setFilters} />
+        <KanbanFilters filters={filters} users={users} stages={stages} onChange={setFilters} />
         <Button variant="outline" onClick={() => setImportOpen(true)} size="md">
           <Upload className="h-4 w-4" />
           Importar CSV
@@ -200,12 +190,12 @@ export function KanbanBoard({ initialLeads, users }: KanbanBoardProps) {
       {/* Kanban */}
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         <div className="flex gap-4 overflow-x-auto pb-4 flex-1">
-          {STAGES.map(({ stage, label }) => (
+          {stages.map((s) => (
             <KanbanColumn
-              key={stage}
-              stage={stage}
-              label={label}
-              leads={getLeadsForStage(stage)}
+              key={s.key}
+              stage={s.key}
+              label={s.name}
+              leads={getLeadsForStage(s.key)}
               users={users}
               onDeleteLead={handleLeadDeleted}
               onUpdateLead={handleLeadUpdated}
@@ -228,6 +218,7 @@ export function KanbanBoard({ initialLeads, users }: KanbanBoardProps) {
         onClose={() => setFormOpen(false)}
         onSuccess={handleLeadCreated}
         users={users}
+        stages={stages}
       />
 
       {/* Dialog de importação CSV */}

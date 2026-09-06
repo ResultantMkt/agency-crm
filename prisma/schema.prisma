@@ -22,17 +22,6 @@ enum ClientStatus {
   NOT_RENEWED
 }
 
-enum LeadStage {
-  LEAD
-  MQL
-  SCREENING_SCHEDULED
-  SCREENING_DONE
-  CLOSING_MEETING
-  PROPOSAL_SENT
-  CLOSED
-  LOST
-}
-
 enum LeadSource {
   TRAFFIC
   PROSPECTING
@@ -99,11 +88,19 @@ model Client {
   @@index([status])
 }
 
+model PipelineStage {
+  id       String  @id @default(cuid())
+  key      String  @unique
+  name     String
+  position Int
+  color    String?
+}
+
 model Lead {
   id             String     @id @default(cuid())
   name           String
   source         LeadSource @default(OTHER)
-  stage          LeadStage  @default(LEAD)
+  stage          String     @default("LEAD")
   position       Int        @default(0)
   phone          String
   email          String?
@@ -125,8 +122,8 @@ model Lead {
 model LeadHistory {
   id              String     @id @default(cuid())
   leadId          String
-  fromStage       LeadStage?
-  toStage         LeadStage
+  fromStage       String?
+  toStage         String
   note            String?
   comment         String?    @db.Text
   commentByName   String?

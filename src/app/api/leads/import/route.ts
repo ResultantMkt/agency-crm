@@ -3,17 +3,13 @@ import { auth } from "@/lib/auth"
 import { z } from "zod"
 
 const VALID_SOURCES = ["TRAFFIC", "PROSPECTING", "REFERRAL", "OTHER"] as const
-const VALID_STAGES = [
-  "LEAD", "MQL", "SCREENING_SCHEDULED", "SCREENING_DONE",
-  "CLOSING_MEETING", "PROPOSAL_SENT", "CLOSED", "LOST",
-] as const
 
 const rowSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
   phone: z.string().min(1, "Telefone é obrigatório"),
   email: z.string().email("Email inválido").or(z.literal("")).nullish(),
   source: z.enum(VALID_SOURCES).default("OTHER"),
-  stage: z.enum(VALID_STAGES).default("LEAD"),
+  stage: z.string().default("LEAD"),
   assignedToId: z.string().nullish(),
   estimatedValue: z.coerce.number().positive("Valor deve ser positivo").nullish(),
   notes: z.string().nullish(),

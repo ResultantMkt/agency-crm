@@ -57,28 +57,6 @@ function MetricCard({
   )
 }
 
-const FUNNEL_STAGES = [
-  "LEAD",
-  "MQL",
-  "SCREENING_SCHEDULED",
-  "SCREENING_DONE",
-  "CLOSING_MEETING",
-  "PROPOSAL_SENT",
-  "CLOSED",
-  "LOST",
-] as const
-
-const STAGE_LABELS: Record<string, string> = {
-  LEAD: "Lead",
-  MQL: "MQL",
-  SCREENING_SCHEDULED: "Triagem Agendada",
-  SCREENING_DONE: "Triagem Realizada",
-  CLOSING_MEETING: "Reunião de Fechamento",
-  PROPOSAL_SENT: "Proposta Enviada",
-  CLOSED: "Fechamento",
-  LOST: "Perdido",
-}
-
 export default async function DashboardPage() {
   const session = await auth()
   if (!session?.user) {
@@ -98,6 +76,7 @@ export default async function DashboardPage() {
     expensesOneTime,
     funnelRaw,
     overdueTasksCount,
+    rawStages,
   ] = await Promise.all([
     prisma.client.count({
       where: { status: "ACTIVE" },
@@ -151,6 +130,8 @@ export default async function DashboardPage() {
         dueDate: { lt: getOverdueCutoff() },
       },
     }),
+
+    prisma.pipelineStage.findMany({ orderBy: { position: "asc" } }),
   ])
 
   const mrr = activeMonthlyClients.reduce(
@@ -277,31 +258,18 @@ export default async function DashboardPage() {
           </p>
 
           <div className="space-y-3">
-            {FUNNEL_STAGES.map((stage) => {
-              const count = funnelMap[stage] ?? 0
+            {rawStages.map((stage) => {
+              const count = funnelMap[stage.key] ?? 0
               const pct = totalLeads > 0 ? (count / totalLeads) * 100 : 0
-              const barColor =
-                stage === "CLOSED"
-                  ? "bg-emerald-500"
-                  : stage === "LOST"
-                  ? "bg-red-500"
-                  : "bg-purple-500"
-
+              const barColor = stage.key === "CLOSED" ? "bg-emerald-500" : stage.key === "LOST" ? "bg-red-500" : "bg-purple-500"
               return (
-                <div key={stage}>
+                <div key={stage.key}>
                   <div className="mb-1 flex items-center justify-between">
-                    <span className="text-xs font-medium text-gray-600">
-                      {STAGE_LABELS[stage]}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {count} ({pct.toFixed(0)}%)
-                    </span>
+                    <span className="text-xs font-medium text-gray-600">{stage.name}</span>
+                    <span className="text-xs text-gray-500">{count} ({pct.toFixed(0)}%)</span>
                   </div>
                   <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200">
-                    <div
-                      className={`h-2 rounded-full transition-all ${barColor}`}
-                      style={{ width: `${pct}%` }}
-                    />
+                    <div className={`h-2 rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
                   </div>
                 </div>
               )

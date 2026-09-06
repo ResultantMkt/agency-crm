@@ -16,6 +16,7 @@ import {
   Settings,
   Users,
   Plug,
+  GitBranch,
   ChevronDown,
   ChevronRight,
   ChevronUp,
@@ -156,6 +157,7 @@ export function Sidebar({ overdueCount = 0 }: SidebarProps) {
       activeWhen: ["/settings"],
       children: [
         { href: "/settings/users", label: "Usuários", icon: Users },
+        { href: "/settings/pipeline", label: "Pipeline", icon: GitBranch },
         { href: "/settings/integrations", label: "Integrações", icon: Plug },
       ],
     },
