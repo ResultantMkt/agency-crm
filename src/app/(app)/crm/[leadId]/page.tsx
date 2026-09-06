@@ -4,11 +4,12 @@ import Link from "next/link"
 import { ArrowLeft, MessageSquare } from "lucide-react"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { formatDate, cn } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 import type { Lead, LeadHistory, Task, LeadStage, User } from "@/types/models"
 import { LeadDetailClient } from "./lead-detail-client"
 import { LeadInfoClient } from "./lead-info-client"
 import { LeadTasksClient } from "./lead-tasks-client"
+import { LeadHistoryClient } from "./lead-history-client"
 
 export const metadata: Metadata = {
   title: "Detalhe do Lead — Agency CRM",
@@ -122,50 +123,7 @@ export default async function LeadDetailPage({
       {/* Timeline de histórico */}
       <section>
         <h3 className="text-base font-semibold text-white mb-3">Histórico de estágios</h3>
-        {lead.history.length === 0 ? (
-          <p className="text-sm text-gray-500">Nenhum histórico de mudança de estágio.</p>
-        ) : (
-          <ol className="relative border-l border-gray-700 ml-3 space-y-4">
-            {lead.history.map((h) => (
-              <li key={h.id} className="ml-4">
-                <div className="absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full bg-blue-500 border-2 border-gray-900" />
-                <div className="bg-gray-800/60 border border-gray-700/50 rounded-lg px-4 py-3">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {h.fromStage && (
-                      <>
-                        <span
-                          className={cn(
-                            "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-                            STAGE_COLORS[h.fromStage]
-                          )}
-                        >
-                          {STAGE_LABELS[h.fromStage]}
-                        </span>
-                        <span className="text-gray-500 text-xs">→</span>
-                      </>
-                    )}
-                    <span
-                      className={cn(
-                        "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-                        STAGE_COLORS[h.toStage]
-                      )}
-                    >
-                      {STAGE_LABELS[h.toStage]}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 mt-1.5 text-xs text-gray-500">
-                    <span>{h.changedBy?.name ?? "Sistema"}</span>
-                    <span>·</span>
-                    <span>{formatDate(h.createdAt)}</span>
-                  </div>
-                  {h.note && (
-                    <p className="text-xs text-gray-400 mt-1.5">{h.note}</p>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ol>
-        )}
+        <LeadHistoryClient leadId={lead.id} initialHistory={lead.history} />
       </section>
 
       {/* Tarefas */}

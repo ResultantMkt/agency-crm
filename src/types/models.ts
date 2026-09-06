@@ -35,6 +35,9 @@ export interface LeadHistory {
   fromStage?: LeadStage | null
   toStage: LeadStage
   note?: string | null
+  comment?: string | null
+  commentByName?: string | null
+  commentAt?: string | null
   changedById: string
   createdAt: string
   changedBy?: { name: string }

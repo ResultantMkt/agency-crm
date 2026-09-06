@@ -123,13 +123,16 @@ model Lead {
 }
 
 model LeadHistory {
-  id          String     @id @default(cuid())
-  leadId      String
-  fromStage   LeadStage?
-  toStage     LeadStage
-  note        String?
-  changedById String
-  createdAt   DateTime   @default(now())
+  id              String     @id @default(cuid())
+  leadId          String
+  fromStage       LeadStage?
+  toStage         LeadStage
+  note            String?
+  comment         String?    @db.Text
+  commentByName   String?
+  commentAt       DateTime?
+  changedById     String
+  createdAt       DateTime   @default(now())
 
   lead      Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
   changedBy User @relation("ChangedBy", fields: [changedById], references: [id])

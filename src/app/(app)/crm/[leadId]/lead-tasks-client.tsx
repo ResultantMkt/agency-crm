@@ -17,6 +17,7 @@ interface LeadTasksClientProps {
 export function LeadTasksClient({ leadId, initialTasks, users }: LeadTasksClientProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks)
   const [modalOpen, setModalOpen] = useState(false)
+  const [toggling, setToggling] = useState<string | null>(null)
 
   function handleTaskCreated(task: CreatedTask) {
     const newTask: Task = {
@@ -34,6 +35,25 @@ export function LeadTasksClient({ leadId, initialTasks, users }: LeadTasksClient
     }
     setTasks((prev) => [newTask, ...prev])
     setModalOpen(false)
+  }
+
+  async function toggleStatus(task: Task) {
+    if (toggling) return
+    const newStatus = task.status === "DONE" ? "PENDING" : "DONE"
+    setToggling(task.id)
+    setTasks((prev) => prev.map((t) => t.id === task.id ? { ...t, status: newStatus } : t))
+    try {
+      await fetch(`/api/tasks/${task.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      })
+    } catch {
+      // revert on error
+      setTasks((prev) => prev.map((t) => t.id === task.id ? { ...t, status: task.status } : t))
+    } finally {
+      setToggling(null)
+    }
   }
 
   return (
@@ -57,11 +77,19 @@ export function LeadTasksClient({ leadId, initialTasks, users }: LeadTasksClient
               key={task.id}
               className="flex items-start gap-3 bg-gray-800/60 border border-gray-700/50 rounded-lg px-4 py-3"
             >
-              {task.status === "DONE" ? (
-                <CheckCircle2 className="h-4 w-4 text-emerald-400 mt-0.5 shrink-0" />
-              ) : (
-                <Circle className="h-4 w-4 text-gray-500 mt-0.5 shrink-0" />
-              )}
+              <button
+                type="button"
+                onClick={() => toggleStatus(task)}
+                disabled={toggling === task.id}
+                title={task.status === "DONE" ? "Reabrir tarefa" : "Marcar como concluída"}
+                className="mt-0.5 shrink-0 text-gray-500 hover:text-emerald-400 transition-colors disabled:opacity-50"
+              >
+                {task.status === "DONE" ? (
+                  <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                ) : (
+                  <Circle className="h-4 w-4" />
+                )}
+              </button>
               <div className="flex-1 min-w-0">
                 <p
                   className={cn(
