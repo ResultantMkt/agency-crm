@@ -193,6 +193,8 @@ model Conversation {
   phoneNumber         String   @unique
   contactName         String?
   contactNameManual   Boolean  @default(false)
+  isGroup             Boolean  @default(false)
+  groupName           String?
   archived            Boolean  @default(false)
   pinned              Boolean  @default(false)
   favorite            Boolean  @default(false)

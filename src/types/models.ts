@@ -88,6 +88,8 @@ export interface Conversation {
   phoneNumber: string
   contactName?: string | null
   contactNameManual?: boolean
+  isGroup?: boolean
+  groupName?: string | null
   archived?: boolean
   pinned?: boolean
   favorite?: boolean
@@ -109,4 +111,5 @@ export interface Message {
   mediaType?: string | null
   mediaUrl?: string | null
   mediaName?: string | null
+  reactions?: Record<string, string[]> | null
 }

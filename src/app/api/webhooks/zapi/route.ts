@@ -59,9 +59,15 @@ export async function POST(request: NextRequest) {
     const rawPhone: string | undefined = body.phone ?? body.from
     const text: string | undefined = body.text?.message ?? body.message?.text
     const senderName: string | undefined = body.senderName ?? body.pushName
-    const incomingName: string | undefined =
-      body.subject ?? body.chatName ?? body.groupName ??
-      body.pushname ?? body.pushName ?? body.senderName
+
+    const isGroup = typeof rawPhone === "string" && rawPhone.includes("@g.us")
+    const groupName: string | null = isGroup
+      ? ((body.subject ?? body.chatName ?? body.groupName ?? null) as string | null)
+      : null
+    const incomingName: string | undefined = isGroup
+      ? (groupName ?? undefined)
+      : ((body.subject ?? body.chatName ?? body.groupName ??
+          body.pushname ?? body.pushName ?? body.senderName) as string | undefined)
 
     const { mediaType, mediaUrl, mediaName, caption } = extractMedia(body as Record<string, unknown>)
 
@@ -72,20 +78,27 @@ export async function POST(request: NextRequest) {
       return Response.json({ ok: true })
     }
 
-    const cleanPhone = rawPhone.replace("@s.whatsapp.net", "")
+    const cleanPhone = rawPhone.replace("@s.whatsapp.net", "").replace("@g.us", "")
     const phoneNumber = normalizePhone(cleanPhone)
     if (!phoneNumber) return Response.json({ ok: true })
 
     const conversation = await prisma.conversation.upsert({
       where: { phoneNumber },
-      create: { phoneNumber, leadId: null, clientId: null, contactName: incomingName ?? null },
+      create: {
+        phoneNumber,
+        leadId: null,
+        clientId: null,
+        contactName: incomingName ?? null,
+        isGroup,
+        groupName,
+      },
       update: { updatedAt: new Date() },
     })
 
     if (incomingName) {
       await prisma.conversation.updateMany({
         where: { phoneNumber, contactNameManual: false },
-        data: { contactName: incomingName },
+        data: { contactName: incomingName, isGroup, groupName },
       })
     }
 
