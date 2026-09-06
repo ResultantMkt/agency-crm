@@ -5,6 +5,7 @@ import { Plus, Trash2, CheckCircle, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { formatDate } from "@/lib/utils"
+import { isTaskOverdue } from "@/lib/date-utils"
 import { TaskForm } from "@/components/tasks/task-form"
 import type { Task, User } from "@/types/models"
 
@@ -67,22 +68,15 @@ export default function TasksPage() {
     fetchTasks()
   }
 
-  const now = new Date()
-
   const filtered = filterUserId
     ? tasks.filter((t) => t.assignedToId === filterUserId)
     : tasks
 
   const overdue = filtered.filter(
-    (t) =>
-      t.status === "PENDING" &&
-      t.dueDate &&
-      new Date(t.dueDate) < now
+    (t) => t.status === "PENDING" && isTaskOverdue(t.dueDate)
   )
   const pending = filtered.filter(
-    (t) =>
-      t.status === "PENDING" &&
-      (!t.dueDate || new Date(t.dueDate) >= now)
+    (t) => t.status === "PENDING" && !isTaskOverdue(t.dueDate)
   )
   const done = filtered.filter((t) => t.status === "DONE")
 

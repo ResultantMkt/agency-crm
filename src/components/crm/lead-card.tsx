@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { formatCurrency } from "@/lib/utils"
+import { isTaskOverdue } from "@/lib/date-utils"
 import type { Lead, LeadSource, LeadSource as LeadSourceType, TaskStatus, User as UserType } from "@/types/models"
 import { QuickTaskModal, type CreatedTask } from "./quick-task-modal"
 
@@ -62,9 +63,6 @@ function getMostUrgentTask(
   const openTasks = tasks.filter((t) => t.status !== "DONE")
   if (openTasks.length === 0) return null
 
-  const now = new Date()
-  now.setHours(0, 0, 0, 0)
-
   const sorted = [...openTasks].sort((a, b) => {
     const da = a.dueDate ? new Date(a.dueDate) : null
     const db = b.dueDate ? new Date(b.dueDate) : null
@@ -75,10 +73,7 @@ function getMostUrgentTask(
   })
 
   const top = sorted[0]
-  const dueDate = top.dueDate ? new Date(top.dueDate) : null
-  if (dueDate) dueDate.setHours(0, 0, 0, 0)
-
-  const urgency: TaskUrgency = dueDate && dueDate < now ? "overdue" : "pending"
+  const urgency: TaskUrgency = isTaskOverdue(top.dueDate) ? "overdue" : "pending"
   return { title: top.title, urgency }
 }
 

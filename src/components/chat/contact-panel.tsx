@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { X, ExternalLink, Plus, Phone, User, Layers, FileText, Calendar, CheckCircle2, Circle, AlertCircle, Check, Pencil } from "lucide-react"
 import type { Lead, LeadSource, LeadStage, User as UserType } from "@/types/models"
+import { isTaskOverdue } from "@/lib/date-utils"
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 
@@ -81,7 +82,7 @@ type PanelTask = { id: string; title: string; status: string; dueDate?: string |
 
 function TaskItem({ task }: { task: PanelTask }) {
   const isDone = task.status === "DONE"
-  const isOverdue = !isDone && task.dueDate && new Date(task.dueDate) < new Date()
+  const isOverdue = !isDone && isTaskOverdue(task.dueDate)
   return (
     <div className="flex items-start gap-2 py-1.5">
       <span className="mt-0.5 shrink-0">

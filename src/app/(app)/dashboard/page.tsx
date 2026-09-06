@@ -12,6 +12,7 @@ import {
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { formatCurrency, formatMonth, getStartOfMonth, getEndOfMonth } from "@/lib/utils"
+import { getOverdueCutoff } from "@/lib/date-utils"
 
 export const metadata: Metadata = {
   title: "Dashboard — Agency CRM",
@@ -147,7 +148,7 @@ export default async function DashboardPage() {
     prisma.task.count({
       where: {
         status: "PENDING",
-        dueDate: { lt: now },
+        dueDate: { lt: getOverdueCutoff() },
       },
     }),
   ])

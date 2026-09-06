@@ -2,13 +2,14 @@ import { redirect } from "next/navigation"
 import { unstable_cache } from "next/cache"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { getOverdueCutoff } from "@/lib/date-utils"
 import { Sidebar } from "@/components/layout/sidebar"
 import { Topbar } from "@/components/layout/topbar"
 
 const getOverdueCount = unstable_cache(
   async () =>
     prisma.task.count({
-      where: { status: "PENDING", dueDate: { lt: new Date() } },
+      where: { status: "PENDING", dueDate: { lt: getOverdueCutoff() } },
     }),
   ["overdue-task-count"],
   { revalidate: 60 }
