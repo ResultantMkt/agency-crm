@@ -16,6 +16,9 @@ import {
   Settings,
   Users,
   Plug,
+  FileText,
+  Receipt,
+  Database,
   ChevronDown,
   ChevronRight,
   ChevronUp,
@@ -33,6 +36,7 @@ interface SubItem {
   label: string
   icon: React.ElementType
   badge?: number
+  exact?: boolean
 }
 
 interface NavGroup {
@@ -86,10 +90,12 @@ export function Sidebar({ overdueCount = 0 }: SidebarProps) {
 
   const comercialActive = isGroupActive(pathname, ["/comercial", "/crm", "/chat", "/tasks"])
   const settingsActive = isGroupActive(pathname, ["/settings"])
+  const financialActive = isGroupActive(pathname, ["/financial"])
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>({
     comercial: comercialActive,
     settings: settingsActive,
+    financial: financialActive,
   })
 
   useEffect(() => { pathnameRef.current = pathname }, [pathname])
@@ -146,7 +152,19 @@ export function Sidebar({ overdueCount = 0 }: SidebarProps) {
         { href: "/tasks", label: "Tarefas", icon: CheckSquare, badge: overdueCount },
       ],
     },
-    { type: "link", href: "/financial", label: "Financeiro", icon: DollarSign },
+    {
+      type: "group",
+      key: "financial",
+      label: "Financeiro",
+      icon: DollarSign,
+      activeWhen: ["/financial"],
+      children: [
+        { href: "/financial", label: "Visão Geral", icon: LayoutDashboard, exact: true },
+        { href: "/financial/contracts", label: "Controle de Contratos", icon: FileText },
+        { href: "/financial/expenses", label: "Despesas Mensais", icon: Receipt },
+        { href: "/financial/asaas", label: "Controle de Dados (Asaas)", icon: Database },
+      ],
+    },
     { type: "link", href: "/clients", label: "Gestão de Clientes", icon: Building2 },
     {
       type: "group",
@@ -221,7 +239,9 @@ export function Sidebar({ overdueCount = 0 }: SidebarProps) {
                   <ul className="mt-1 space-y-1">
                     {item.children.map((child) => {
                       const ChildIcon = child.icon
-                      const childActive = isActiveLink(pathname, child.href)
+                      const childActive = child.exact
+                        ? pathname === child.href
+                        : isActiveLink(pathname, child.href)
                       return (
                         <li key={child.href}>
                           <Link
