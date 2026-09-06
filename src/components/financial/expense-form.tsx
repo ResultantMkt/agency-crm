@@ -176,7 +176,7 @@ export function ExpenseForm({ open, onClose, onSuccess, expense }: ExpenseFormPr
               type="checkbox"
               checked={isRecurring}
               onChange={(e) => setIsRecurring(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-blue-600 focus:ring-blue-500"
+              className="h-4 w-4 rounded border-gray-300 bg-gray-100 text-purple-700 focus:ring-purple-500"
             />
             <Label htmlFor="exp-recurring" className="cursor-pointer">
               Despesa recorrente

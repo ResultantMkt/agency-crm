@@ -80,7 +80,7 @@ export default async function ClientDetailPage({
       {/* Back */}
       <Link
         href="/clients"
-        className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
+        className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
         Voltar a Clientes
@@ -89,8 +89,8 @@ export default async function ClientDetailPage({
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-white">{client.name}</h2>
-          <p className="text-sm text-gray-400 mt-1">
+          <h2 className="text-2xl font-bold text-gray-900">{client.name}</h2>
+          <p className="text-sm text-gray-500 mt-1">
             Desde {formatDate(client.startDate)}
           </p>
         </div>
@@ -131,23 +131,23 @@ export default async function ClientDetailPage({
 
       {/* Notas */}
       {client.notes && (
-        <div className="bg-gray-800/60 border border-gray-700/50 rounded-lg px-4 py-4">
-          <p className="text-xs font-semibold text-gray-400 mb-1.5">Notas</p>
-          <p className="text-sm text-gray-300 whitespace-pre-wrap">{client.notes}</p>
+        <div className="bg-gray-100/60 border border-gray-200/50 rounded-lg px-4 py-4">
+          <p className="text-xs font-semibold text-gray-500 mb-1.5">Notas</p>
+          <p className="text-sm text-gray-600 whitespace-pre-wrap">{client.notes}</p>
         </div>
       )}
 
       {/* Recebíveis do mês atual */}
       <section>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-base font-semibold text-white">
+          <h3 className="text-base font-semibold text-gray-900">
             Recebíveis — {formatMonth(now)}
           </h3>
           {client.receivables.length > 0 && (
-            <div className="text-sm text-gray-400">
+            <div className="text-sm text-gray-500">
               <span className="text-emerald-400 font-medium">{formatCurrency(paidReceivables)}</span>
               {" "}de{" "}
-              <span className="font-medium text-white">{formatCurrency(totalReceivables)}</span>
+              <span className="font-medium text-gray-900">{formatCurrency(totalReceivables)}</span>
               {" "}recebido
             </div>
           )}
@@ -156,31 +156,31 @@ export default async function ClientDetailPage({
         {client.receivables.length === 0 ? (
           <p className="text-sm text-gray-500">Nenhum recebível registrado para este mês.</p>
         ) : (
-          <div className="rounded-lg border border-gray-700/50 overflow-hidden">
+          <div className="rounded-lg border border-gray-200/50 overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-700/50 bg-gray-800/80">
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                <tr className="border-b border-gray-200/50 bg-gray-100/80">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Vencimento
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Valor
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-700/30">
+              <tbody className="divide-y divide-gray-200/30">
                 {client.receivables.map((r) => {
                   const config = RECEIVABLE_CONFIG[r.status]
                   return (
                     <tr
                       key={r.id}
-                      className="bg-gray-800/30 hover:bg-gray-800/60 transition-colors"
+                      className="bg-gray-100/30 hover:bg-gray-100/60 transition-colors"
                     >
-                      <td className="px-4 py-3 text-gray-300">{formatDate(r.dueDate)}</td>
-                      <td className="px-4 py-3 font-medium text-white">
+                      <td className="px-4 py-3 text-gray-600">{formatDate(r.dueDate)}</td>
+                      <td className="px-4 py-3 font-medium text-gray-900">
                         {formatCurrency(parseFloat(r.value))}
                       </td>
                       <td className="px-4 py-3">
@@ -197,7 +197,7 @@ export default async function ClientDetailPage({
 
       {/* Tarefas vinculadas */}
       <section>
-        <h3 className="text-base font-semibold text-white mb-3">
+        <h3 className="text-base font-semibold text-gray-900 mb-3">
           Tarefas ({client.tasks.length})
         </h3>
         {client.tasks.length === 0 ? (
@@ -207,7 +207,7 @@ export default async function ClientDetailPage({
             {client.tasks.map((task) => (
               <li
                 key={task.id}
-                className="flex items-start gap-3 bg-gray-800/60 border border-gray-700/50 rounded-lg px-4 py-3"
+                className="flex items-start gap-3 bg-gray-100/60 border border-gray-200/50 rounded-lg px-4 py-3"
               >
                 {task.status === "DONE" ? (
                   <CheckCircle2 className="h-4 w-4 text-emerald-400 mt-0.5 shrink-0" />
@@ -218,7 +218,7 @@ export default async function ClientDetailPage({
                   <p
                     className={cn(
                       "text-sm font-medium",
-                      task.status === "DONE" ? "text-gray-500 line-through" : "text-white"
+                      task.status === "DONE" ? "text-gray-500 line-through" : "text-gray-900"
                     )}
                   >
                     {task.title}
@@ -263,12 +263,12 @@ function InfoCard({
   value: string
 }) {
   return (
-    <div className="bg-gray-800/60 border border-gray-700/50 rounded-lg px-4 py-3">
-      <div className="flex items-center gap-2 text-gray-400 mb-1">
+    <div className="bg-gray-100/60 border border-gray-200/50 rounded-lg px-4 py-3">
+      <div className="flex items-center gap-2 text-gray-500 mb-1">
         {icon}
         <span className="text-xs">{label}</span>
       </div>
-      <p className="text-sm font-medium text-white truncate">{value}</p>
+      <p className="text-sm font-medium text-gray-900 truncate">{value}</p>
     </div>
   )
 }

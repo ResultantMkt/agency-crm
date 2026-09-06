@@ -88,7 +88,7 @@ export function LeadInfoClient({ lead, users }: LeadInfoClientProps) {
         {editingField === "source" ? (
           <select
             autoFocus
-            className="w-full text-sm bg-gray-700 text-white rounded px-1.5 py-1 border border-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full text-sm bg-gray-200 text-gray-900 rounded px-1.5 py-1 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-purple-500"
             value={source}
             onChange={(e) => handleSourceChange(e.target.value as LeadSource)}
             onBlur={() => setEditingField(null)}
@@ -117,7 +117,7 @@ export function LeadInfoClient({ lead, users }: LeadInfoClientProps) {
               min="0"
               step="0.01"
               placeholder="0.00"
-              className="w-full text-sm bg-gray-700 text-white rounded px-1.5 py-1 border border-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full text-sm bg-gray-200 text-gray-900 rounded px-1.5 py-1 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-purple-500"
               value={tempValue}
               onChange={(e) => setTempValue(e.target.value)}
               onBlur={handleEstimatedValueSave}
@@ -145,7 +145,7 @@ export function LeadInfoClient({ lead, users }: LeadInfoClientProps) {
         {editingField === "assignedTo" ? (
           <select
             autoFocus
-            className="w-full text-sm bg-gray-700 text-white rounded px-1.5 py-1 border border-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full text-sm bg-gray-200 text-gray-900 rounded px-1.5 py-1 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-purple-500"
             value={assignedToId ?? ""}
             onChange={(e) => handleAssignedToChange(e.target.value || null)}
             onBlur={() => setEditingField(null)}
@@ -168,7 +168,7 @@ export function LeadInfoClient({ lead, users }: LeadInfoClientProps) {
 
       {/* Criado em — somente leitura */}
       <InfoCardShell icon={<Calendar className="h-4 w-4" />} label="Criado em">
-        <p className="text-sm font-medium text-white truncate">{formatDate(lead.createdAt)}</p>
+        <p className="text-sm font-medium text-gray-900 truncate">{formatDate(lead.createdAt)}</p>
       </InfoCardShell>
     </div>
   )
@@ -184,8 +184,8 @@ function InfoCardShell({
   children: React.ReactNode
 }) {
   return (
-    <div className="bg-gray-800/60 border border-gray-700/50 rounded-lg px-4 py-3">
-      <div className="flex items-center gap-2 text-gray-400 mb-1">
+    <div className="bg-gray-100/60 border border-gray-200/50 rounded-lg px-4 py-3">
+      <div className="flex items-center gap-2 text-gray-500 mb-1">
         {icon}
         <span className="text-xs">{label}</span>
       </div>
@@ -211,11 +211,11 @@ function EditableValue({
       onClick={onClick}
       title="Clique para editar"
       className={`text-sm font-medium truncate w-full text-left transition-colors group flex items-center gap-1 ${
-        empty ? "text-gray-500 italic" : "text-white"
-      } hover:text-blue-400`}
+        empty ? "text-gray-500 italic" : "text-gray-900"
+      } hover:text-purple-600`}
     >
       <span className="truncate">{children}</span>
-      <span className="shrink-0 opacity-0 group-hover:opacity-60 transition-opacity text-xs text-gray-400">✎</span>
+      <span className="shrink-0 opacity-0 group-hover:opacity-60 transition-opacity text-xs text-gray-500">✎</span>
     </button>
   )
 }

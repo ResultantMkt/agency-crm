@@ -92,13 +92,13 @@ export default function TasksPage() {
         className={`rounded-lg border p-4 transition-colors ${
           isOverdue
             ? "bg-red-900/20 border-red-700/50"
-            : "bg-gray-800/30 border-gray-700/30 hover:bg-gray-800/50"
+            : "bg-gray-100/30 border-gray-200/30 hover:bg-white"
         }`}
       >
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-medium text-white">{task.title}</span>
+              <span className="font-medium text-gray-900">{task.title}</span>
               {isOverdue && (
                 <Badge variant="destructive" className="shrink-0">
                   <AlertCircle className="h-3 w-3 mr-1" />
@@ -124,7 +124,7 @@ export default function TasksPage() {
             </div>
 
             {task.description && (
-              <p className="mt-1.5 text-sm text-gray-400 line-clamp-2">
+              <p className="mt-1.5 text-sm text-gray-500 line-clamp-2">
                 {task.description}
               </p>
             )}
@@ -145,7 +145,7 @@ export default function TasksPage() {
                 setEditingTask(task)
                 setFormOpen(true)
               }}
-              className="rounded p-1.5 text-gray-500 hover:text-white hover:bg-gray-700/50 transition-colors text-xs"
+              className="rounded p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors text-xs"
             >
               Editar
             </button>
@@ -170,7 +170,7 @@ export default function TasksPage() {
             <select
               value={filterUserId}
               onChange={(e) => setFilterUserId(e.target.value)}
-              className="h-9 rounded-lg border border-gray-700 bg-gray-800 px-3 text-sm text-white outline-none focus:border-blue-500"
+              className="h-9 rounded-lg border border-gray-200 bg-gray-100 px-3 text-sm text-gray-900 outline-none focus:border-purple-500"
             >
               <option value="">Todos os responsáveis</option>
               {users.map((u) => (
@@ -201,14 +201,14 @@ export default function TasksPage() {
             group.tasks.length === 0 && group.label === "Concluídas" ? null : (
               <section key={group.label}>
                 <div className="mb-3 flex items-center gap-2">
-                  <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-400">
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500">
                     {group.label}
                   </h3>
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                       group.isOverdue
                         ? "bg-red-900/30 text-red-400"
-                        : "bg-gray-700/50 text-gray-400"
+                        : "bg-gray-100 text-gray-500"
                     }`}
                   >
                     {group.tasks.length}

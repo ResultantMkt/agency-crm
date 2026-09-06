@@ -212,26 +212,26 @@ export function LeadCard({ lead, users = [], onDelete, onUpdate }: LeadCardProps
         {...listeners}
         {...attributes}
         onClick={handleClick}
-        className={`relative bg-gray-800 border border-gray-700 rounded-lg p-4 shadow hover:shadow-md hover:border-gray-600 transition-all select-none ${isDragging ? "cursor-grabbing" : "cursor-pointer"}`}
+        className={`relative bg-gray-100 border border-gray-200 rounded-lg p-4 shadow hover:shadow-md hover:border-gray-300 transition-all select-none ${isDragging ? "cursor-grabbing" : "cursor-pointer"}`}
       >
         {/* Nome + menu */}
         <div className="flex items-start justify-between gap-1 mb-2">
-          <p className="text-sm font-semibold text-white truncate">{lead.name}</p>
+          <p className="text-sm font-semibold text-gray-900 truncate">{lead.name}</p>
           <div ref={menuRef} className="relative shrink-0">
             <button
               type="button"
               onClick={handleMenuClick}
               onPointerDown={(e) => e.stopPropagation()}
-              className="p-0.5 rounded text-gray-500 hover:text-white hover:bg-gray-700/60 transition-colors"
+              className="p-0.5 rounded text-gray-500 hover:text-gray-900 hover:bg-gray-200/60 transition-colors"
             >
               <MoreVertical className="h-3.5 w-3.5" />
             </button>
             {menuOpen && (
-              <div className="absolute right-0 top-6 z-50 min-w-[140px] rounded-lg border border-gray-700 bg-gray-800 shadow-xl py-1">
+              <div className="absolute right-0 top-6 z-50 min-w-[140px] rounded-lg border border-gray-200 bg-gray-100 shadow-xl py-1">
                 <button
                   type="button"
                   onClick={handleDeleteClick}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-gray-700/50 transition-colors"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-gray-100 transition-colors"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                   Excluir lead
@@ -253,7 +253,7 @@ export function LeadCard({ lead, users = [], onDelete, onUpdate }: LeadCardProps
           {editingField === "source" ? (
             <select
               autoFocus
-              className="text-xs bg-gray-700 text-white rounded px-1.5 py-0.5 border border-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500 w-full"
+              className="text-xs bg-gray-200 text-gray-900 rounded px-1.5 py-0.5 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-purple-500 w-full"
               value={lead.source}
               onChange={(e) => handleSourceChange(e.target.value as LeadSourceType)}
               onBlur={() => setEditingField(null)}
@@ -267,7 +267,7 @@ export function LeadCard({ lead, users = [], onDelete, onUpdate }: LeadCardProps
           ) : (
             <Badge
               variant="outline"
-              className="text-xs cursor-pointer hover:border-blue-500/60 hover:text-blue-400 transition-colors"
+              className="text-xs cursor-pointer hover:border-purple-500/60 hover:text-purple-600 transition-colors"
               onClick={(e) => { e.stopPropagation(); setEditingField("source") }}
               onPointerDown={(e) => e.stopPropagation()}
               title="Clique para editar origem"
@@ -283,7 +283,7 @@ export function LeadCard({ lead, users = [], onDelete, onUpdate }: LeadCardProps
             type="button"
             onClick={(e) => { e.stopPropagation(); setTaskModalOpen(true) }}
             onPointerDown={(e) => e.stopPropagation()}
-            className="flex items-center gap-1 mb-3 text-xs text-gray-600 hover:text-blue-400 transition-colors"
+            className="flex items-center gap-1 mb-3 text-xs text-gray-600 hover:text-purple-600 transition-colors"
           >
             <Plus className="h-3 w-3" />
             Tarefa
@@ -327,7 +327,7 @@ export function LeadCard({ lead, users = [], onDelete, onUpdate }: LeadCardProps
             {editingField === "assignedTo" ? (
               <select
                 autoFocus
-                className="text-xs bg-gray-700 text-white rounded px-1.5 py-0.5 border border-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500 max-w-[130px]"
+                className="text-xs bg-gray-200 text-gray-900 rounded px-1.5 py-0.5 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-purple-500 max-w-[130px]"
                 value={lead.assignedToId ?? ""}
                 onChange={(e) => handleAssignedToChange(e.target.value || null)}
                 onBlur={() => setEditingField(null)}
@@ -344,17 +344,17 @@ export function LeadCard({ lead, users = [], onDelete, onUpdate }: LeadCardProps
                 onClick={() => setEditingField("assignedTo")}
                 title="Clique para editar responsável"
               >
-                <div className="h-6 w-6 rounded-full bg-blue-600 flex items-center justify-center text-xs font-semibold text-white shrink-0 group-hover:ring-1 group-hover:ring-blue-400 transition-all">
+                <div className="h-6 w-6 rounded-full bg-purple-600 flex items-center justify-center text-xs font-semibold text-gray-900 shrink-0 group-hover:ring-1 group-hover:ring-blue-400 transition-all">
                   {getInitials(displayAssignedName)}
                 </div>
-                <span className="text-xs text-gray-400 truncate max-w-[80px] group-hover:text-blue-400 transition-colors">
+                <span className="text-xs text-gray-500 truncate max-w-[80px] group-hover:text-purple-600 transition-colors">
                   {displayAssignedName.split(" ")[0]}
                 </span>
               </button>
             ) : (
               <button
                 type="button"
-                className="flex items-center gap-1 text-gray-600 hover:text-gray-400 transition-colors"
+                className="flex items-center gap-1 text-gray-600 hover:text-gray-500 transition-colors"
                 onClick={() => setEditingField("assignedTo")}
                 title="Clique para atribuir responsável"
               >
@@ -388,7 +388,7 @@ export function LeadCard({ lead, users = [], onDelete, onUpdate }: LeadCardProps
             <DialogTitle>Excluir lead</DialogTitle>
             <DialogDescription>
               Tem certeza que deseja excluir o lead{" "}
-              <span className="font-medium text-white">{lead.name}</span>? Essa ação não pode ser desfeita.
+              <span className="font-medium text-gray-900">{lead.name}</span>? Essa ação não pode ser desfeita.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -418,9 +418,9 @@ export function LeadCardOverlay({ lead, users = [] }: LeadCardOverlayProps) {
   const displayAssignedName = assignedUser?.name ?? lead.assignedTo?.name ?? null
 
   return (
-    <div className="bg-gray-800 border border-blue-500/60 rounded-lg p-4 shadow-2xl ring-1 ring-blue-500/30 cursor-grabbing select-none rotate-1">
+    <div className="bg-gray-100 border border-purple-500/60 rounded-lg p-4 shadow-2xl ring-1 ring-purple-500/30 cursor-grabbing select-none rotate-1">
       <div className="flex items-start justify-between gap-1 mb-2">
-        <p className="text-sm font-semibold text-white truncate">{lead.name}</p>
+        <p className="text-sm font-semibold text-gray-900 truncate">{lead.name}</p>
       </div>
 
       {lead.estimatedValue && (
@@ -455,10 +455,10 @@ export function LeadCardOverlay({ lead, users = [] }: LeadCardOverlayProps) {
       <div className="flex items-center justify-between mt-2">
         {displayAssignedName ? (
           <div className="flex items-center gap-1.5">
-            <div className="h-6 w-6 rounded-full bg-blue-600 flex items-center justify-center text-xs font-semibold text-white shrink-0">
+            <div className="h-6 w-6 rounded-full bg-purple-600 flex items-center justify-center text-xs font-semibold text-gray-900 shrink-0">
               {getInitials(displayAssignedName)}
             </div>
-            <span className="text-xs text-gray-400 truncate max-w-[80px]">
+            <span className="text-xs text-gray-500 truncate max-w-[80px]">
               {displayAssignedName.split(" ")[0]}
             </span>
           </div>

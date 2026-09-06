@@ -192,7 +192,7 @@ export default function UsersPage() {
 
       {/* Conteúdo */}
       {loading ? (
-        <div className="flex items-center justify-center h-48 text-gray-400">
+        <div className="flex items-center justify-center h-48 text-gray-500">
           Carregando...
         </div>
       ) : error ? (
@@ -200,31 +200,31 @@ export default function UsersPage() {
           {error}
         </div>
       ) : (
-        <div className="rounded-lg border border-gray-700/50 bg-gray-800/50 overflow-hidden">
+        <div className="rounded-lg border border-gray-200/50 bg-white overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-700/50">
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              <tr className="border-b border-gray-200/50">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Nome
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Email
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Papel
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Criado em
                 </th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Ações
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-700/50">
+            <tbody className="divide-y divide-gray-200/50">
               {users.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
@@ -233,9 +233,9 @@ export default function UsersPage() {
                 </tr>
               ) : (
                 users.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-700/20 transition-colors">
-                    <td className="px-4 py-3 text-white font-medium">{user.name}</td>
-                    <td className="px-4 py-3 text-gray-300">{user.email}</td>
+                  <tr key={user.id} className="hover:bg-gray-200/20 transition-colors">
+                    <td className="px-4 py-3 text-gray-900 font-medium">{user.name}</td>
+                    <td className="px-4 py-3 text-gray-600">{user.email}</td>
                     <td className="px-4 py-3">
                       {user.role === "ADMIN" ? (
                         <Badge variant="default">ADMIN</Badge>
@@ -250,13 +250,13 @@ export default function UsersPage() {
                         <Badge variant="destructive">Inativo</Badge>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-gray-400">{formatDate(user.createdAt)}</td>
+                    <td className="px-4 py-3 text-gray-500">{formatDate(user.createdAt)}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => handleToggleActive(user)}
                           title={user.active ? "Desativar" : "Ativar"}
-                          className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-gray-700/50 transition-colors"
+                          className="p-1.5 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
                         >
                           {user.active ? (
                             <ToggleRight className="h-4 w-4 text-emerald-400" />
@@ -267,14 +267,14 @@ export default function UsersPage() {
                         <button
                           onClick={() => openEdit(user)}
                           title="Editar"
-                          className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-gray-700/50 transition-colors"
+                          className="p-1.5 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(user)}
                           title="Deletar"
-                          className="p-1.5 rounded-md text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                          className="p-1.5 rounded-md text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>

@@ -439,7 +439,7 @@ export default function IntegrationsPage() {
                 <button
                   type="button"
                   onClick={zapiTokenToggle.toggle}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-900 transition-colors"
                 >
                   {zapiTokenToggle.show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -460,7 +460,7 @@ export default function IntegrationsPage() {
                 <button
                   type="button"
                   onClick={zapiClientTokenToggle.toggle}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-900 transition-colors"
                 >
                   {zapiClientTokenToggle.show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -498,11 +498,11 @@ export default function IntegrationsPage() {
 
             {/* WhatsApp Connection */}
             {waStatus !== "idle" && (
-              <div className="border-t border-gray-700 pt-4 space-y-3">
+              <div className="border-t border-gray-200 pt-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-300">Conexão WhatsApp</span>
+                  <span className="text-sm font-medium text-gray-600">Conexão WhatsApp</span>
                   {waStatus === "checking" && (
-                    <Badge variant="outline" className="gap-1.5 text-gray-400">
+                    <Badge variant="outline" className="gap-1.5 text-gray-500">
                       <Loader2 className="h-3 w-3 animate-spin" />
                       Verificando...
                     </Badge>
@@ -533,9 +533,9 @@ export default function IntegrationsPage() {
                     <img
                       src={waQrCode}
                       alt="QR Code WhatsApp"
-                      className="w-48 h-48 rounded-lg border border-gray-600 bg-white"
+                      className="w-48 h-48 rounded-lg border border-gray-300 bg-white"
                     />
-                    <p className="text-xs text-gray-400 text-center">
+                    <p className="text-xs text-gray-500 text-center">
                       Abra o WhatsApp → Dispositivos conectados → Conectar dispositivo
                     </p>
                   </div>
@@ -590,13 +590,13 @@ export default function IntegrationsPage() {
             )}
 
             {/* Queue / Anti-ban section */}
-            <div className="border-t border-gray-700 pt-4 space-y-3">
+            <div className="border-t border-gray-200 pt-4 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-300">Proteção contra banimento</span>
+                <span className="text-sm font-medium text-gray-600">Proteção contra banimento</span>
                 <button
                   type="button"
                   onClick={() => { loadQueueState(); setShowQueueSettings((v) => !v) }}
-                  className="text-xs text-gray-400 hover:text-white transition-colors"
+                  className="text-xs text-gray-500 hover:text-gray-900 transition-colors"
                 >
                   {showQueueSettings ? "Fechar" : "Configurar"}
                 </button>
@@ -621,11 +621,11 @@ export default function IntegrationsPage() {
                   )}
 
                   <div className="space-y-1">
-                    <div className="flex justify-between text-xs text-gray-400">
+                    <div className="flex justify-between text-xs text-gray-500">
                       <span>Mensagens hoje</span>
                       <span>{queueState.sentToday} / {queueState.effectiveLimit}</span>
                     </div>
-                    <div className="h-1.5 rounded-full bg-gray-700 overflow-hidden">
+                    <div className="h-1.5 rounded-full bg-gray-200 overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all ${
                           queueState.sentToday >= queueState.effectiveLimit
@@ -646,7 +646,7 @@ export default function IntegrationsPage() {
                   )}
 
                   {queueState.pendingCount > 0 && queueState.sentToday < queueState.effectiveLimit && (
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-gray-500">
                       {queueState.pendingCount} mensagem(ns) na fila.
                     </p>
                   )}
@@ -654,48 +654,48 @@ export default function IntegrationsPage() {
               )}
 
               {showQueueSettings && (
-                <div className="space-y-3 rounded-lg border border-gray-700 bg-gray-800/50 p-3">
+                <div className="space-y-3 rounded-lg border border-gray-200 bg-white p-3">
                   <div className="space-y-1.5">
-                    <label className="text-xs text-gray-400">Limite diário de mensagens</label>
+                    <label className="text-xs text-gray-500">Limite diário de mensagens</label>
                     <input
                       type="number"
                       min={1}
                       value={queueSettings.maxPerDay}
                       onChange={(e) => setQueueSettings((s) => ({ ...s, maxPerDay: Number(e.target.value) }))}
-                      className="w-full rounded-md border border-gray-600 bg-gray-800 px-3 py-1.5 text-sm text-white outline-none focus:border-blue-500"
+                      className="w-full rounded-md border border-gray-300 bg-gray-100 px-3 py-1.5 text-sm text-gray-900 outline-none focus:border-purple-500"
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1.5">
-                      <label className="text-xs text-gray-400">Delay mín. (s)</label>
+                      <label className="text-xs text-gray-500">Delay mín. (s)</label>
                       <input
                         type="number"
                         min={1}
                         value={queueSettings.minDelaySeconds}
                         onChange={(e) => setQueueSettings((s) => ({ ...s, minDelaySeconds: Number(e.target.value) }))}
-                        className="w-full rounded-md border border-gray-600 bg-gray-800 px-3 py-1.5 text-sm text-white outline-none focus:border-blue-500"
+                        className="w-full rounded-md border border-gray-300 bg-gray-100 px-3 py-1.5 text-sm text-gray-900 outline-none focus:border-purple-500"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs text-gray-400">Delay máx. (s)</label>
+                      <label className="text-xs text-gray-500">Delay máx. (s)</label>
                       <input
                         type="number"
                         min={1}
                         value={queueSettings.maxDelaySeconds}
                         onChange={(e) => setQueueSettings((s) => ({ ...s, maxDelaySeconds: Number(e.target.value) }))}
-                        className="w-full rounded-md border border-gray-600 bg-gray-800 px-3 py-1.5 text-sm text-white outline-none focus:border-blue-500"
+                        className="w-full rounded-md border border-gray-300 bg-gray-100 px-3 py-1.5 text-sm text-gray-900 outline-none focus:border-purple-500"
                       />
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <label className="text-xs text-gray-400">Modo aquecimento</label>
+                    <label className="text-xs text-gray-500">Modo aquecimento</label>
                     <button
                       type="button"
                       onClick={() => setQueueSettings((s) => ({ ...s, warmupEnabled: !s.warmupEnabled }))}
                       className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                        queueSettings.warmupEnabled ? "bg-blue-600" : "bg-gray-600"
+                        queueSettings.warmupEnabled ? "bg-purple-600" : "bg-gray-600"
                       }`}
                     >
                       <span
@@ -709,16 +709,16 @@ export default function IntegrationsPage() {
                   {queueSettings.warmupEnabled && (
                     <>
                       <div className="space-y-1.5">
-                        <label className="text-xs text-gray-400">Data de início do número</label>
+                        <label className="text-xs text-gray-500">Data de início do número</label>
                         <input
                           type="date"
                           value={queueSettings.warmupStartDate}
                           onChange={(e) => setQueueSettings((s) => ({ ...s, warmupStartDate: e.target.value }))}
-                          className="w-full rounded-md border border-gray-600 bg-gray-800 px-3 py-1.5 text-sm text-white outline-none focus:border-blue-500"
+                          className="w-full rounded-md border border-gray-300 bg-gray-100 px-3 py-1.5 text-sm text-gray-900 outline-none focus:border-purple-500"
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-xs text-gray-400">
+                        <label className="text-xs text-gray-500">
                           Multiplicador de aquecimento ({Math.round(Number(queueSettings.warmupMultiplier) * 100)}%)
                         </label>
                         <input
@@ -748,7 +748,7 @@ export default function IntegrationsPage() {
                     type="button"
                     disabled={queueSaving}
                     onClick={saveQueueSettings}
-                    className="w-full rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-500 disabled:opacity-50 transition-colors"
+                    className="w-full rounded-md bg-purple-600 px-3 py-1.5 text-sm text-gray-900 hover:bg-purple-500 disabled:opacity-50 transition-colors"
                   >
                     {queueSaving ? "Salvando..." : "Salvar configurações"}
                   </button>
@@ -763,8 +763,8 @@ export default function IntegrationsPage() {
           <CardHeader>
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10 border border-blue-500/20">
-                  <Calendar className="h-5 w-5 text-blue-400" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/10 border border-purple-500/20">
+                  <Calendar className="h-5 w-5 text-purple-600" />
                 </div>
                 <CardTitle>Google Agenda</CardTitle>
               </div>
@@ -802,7 +802,7 @@ export default function IntegrationsPage() {
                   type="button"
                   onClick={gcSecretToggle.toggle}
                   disabled
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-900 transition-colors disabled:opacity-50"
                 >
                   {gcSecretToggle.show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -843,8 +843,8 @@ export default function IntegrationsPage() {
           <CardHeader>
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600/10 border border-blue-600/20">
-                  <MetaIcon className="h-5 w-5 text-blue-500" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-600/10 border border-purple-600/20">
+                  <MetaIcon className="h-5 w-5 text-purple-600" />
                 </div>
                 <CardTitle>Meta Lead Ads</CardTitle>
               </div>
@@ -854,7 +854,7 @@ export default function IntegrationsPage() {
                   Conectado
                 </Badge>
               ) : (
-                <Badge className="bg-gray-500/20 text-gray-400 border border-gray-500/30 gap-1.5">
+                <Badge className="bg-gray-500/20 text-gray-500 border border-gray-500/30 gap-1.5">
                   <WifiOff className="h-3 w-3" />
                   Desconectado
                 </Badge>
@@ -892,9 +892,9 @@ export default function IntegrationsPage() {
 
             {metaConnected && metaPageName ? (
               <div className="space-y-3">
-                <div className="rounded-lg border border-gray-700 bg-gray-800/50 px-4 py-3 space-y-1.5">
-                  <p className="text-xs text-gray-400">Página conectada</p>
-                  <p className="text-sm font-medium text-white">{metaPageName}</p>
+                <div className="rounded-lg border border-gray-200 bg-white px-4 py-3 space-y-1.5">
+                  <p className="text-xs text-gray-500">Página conectada</p>
+                  <p className="text-sm font-medium text-gray-900">{metaPageName}</p>
                   {metaPageId && (
                     <p className="text-xs text-gray-500 font-mono">ID: {metaPageId}</p>
                   )}
@@ -912,15 +912,15 @@ export default function IntegrationsPage() {
                   )}
                 </div>
 
-                <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 px-4 py-3 text-xs text-blue-300 space-y-1">
+                <div className="rounded-lg border border-purple-500/20 bg-purple-500/5 px-4 py-3 text-xs text-purple-500 space-y-1">
                   <p className="font-medium">Todos os formulários de lead da página sincronizam automaticamente.</p>
-                  <p className="text-blue-400/70">O token de página gerado via OAuth não tem prazo de expiração definido. Reconecte caso os leads parem de chegar.</p>
+                  <p className="text-purple-600/70">O token de página gerado via OAuth não tem prazo de expiração definido. Reconecte caso os leads parem de chegar.</p>
                 </div>
 
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
-                    className="flex-1 text-blue-400 border-blue-500/30 hover:bg-blue-500/10"
+                    className="flex-1 text-purple-600 border-purple-500/30 hover:bg-purple-500/10"
                     onClick={() => { window.location.href = "/api/meta/oauth/start" }}
                   >
                     Reconectar
@@ -955,7 +955,7 @@ export default function IntegrationsPage() {
                 </div>
 
                 <Button
-                  className="w-full bg-blue-600 hover:bg-blue-500 text-white"
+                  className="w-full bg-purple-600 hover:bg-purple-500 text-gray-900"
                   onClick={() => { window.location.href = "/api/meta/oauth/start" }}
                 >
                   <MetaIcon className="h-4 w-4 mr-2" />
@@ -989,7 +989,7 @@ export default function IntegrationsPage() {
                   id="respondi-webhook"
                   readOnly
                   value={webhookOrigin ? `${webhookOrigin}/api/webhooks/lead` : "Carregando..."}
-                  className="flex-1 text-gray-400 cursor-text select-all"
+                  className="flex-1 text-gray-500 cursor-text select-all"
                 />
                 <Button
                   type="button"
@@ -1015,11 +1015,11 @@ export default function IntegrationsPage() {
 
             <div className="rounded-lg border border-yellow-500/20 bg-yellow-500/5 px-4 py-3 text-sm text-yellow-300">
               Configure também o header{" "}
-              <code className="rounded bg-gray-700 px-1 py-0.5 font-mono text-xs text-yellow-200">
+              <code className="rounded bg-gray-200 px-1 py-0.5 font-mono text-xs text-yellow-200">
                 x-webhook-secret
               </code>{" "}
               com o valor do seu{" "}
-              <code className="rounded bg-gray-700 px-1 py-0.5 font-mono text-xs text-yellow-200">
+              <code className="rounded bg-gray-200 px-1 py-0.5 font-mono text-xs text-yellow-200">
                 WEBHOOK_SECRET
               </code>{" "}
               para segurança.

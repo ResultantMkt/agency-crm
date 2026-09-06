@@ -36,8 +36,8 @@ const STAGE_OPTIONS: { value: LeadStage; label: string }[] = [
 const STAGE_LABELS: Record<LeadStage, string> = Object.fromEntries(STAGE_OPTIONS.map((o) => [o.value, o.label])) as Record<LeadStage, string>
 
 const STAGE_COLORS: Record<LeadStage, string> = {
-  LEAD: "bg-gray-600 text-gray-200",
-  MQL: "bg-blue-600/70 text-blue-200",
+  LEAD: "bg-gray-600 text-gray-800",
+  MQL: "bg-purple-600/70 text-blue-200",
   SCREENING_SCHEDULED: "bg-indigo-600/70 text-indigo-200",
   SCREENING_DONE: "bg-violet-600/70 text-violet-200",
   CLOSING_MEETING: "bg-purple-600/70 text-purple-200",
@@ -55,7 +55,7 @@ function getInitials(name: string) {
 }
 
 const AVATAR_COLORS = [
-  "bg-blue-600", "bg-purple-600", "bg-green-600", "bg-orange-600",
+  "bg-purple-600", "bg-purple-600", "bg-green-600", "bg-orange-600",
   "bg-pink-600", "bg-teal-600", "bg-red-600", "bg-indigo-600",
 ]
 function avatarColor(name: string) {
@@ -68,7 +68,7 @@ function avatarColor(name: string) {
 
 function FieldRow({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-start gap-3 py-2.5 border-b border-gray-700/40 last:border-0">
+    <div className="flex items-start gap-3 py-2.5 border-b border-gray-200/40 last:border-0">
       <span className="text-gray-500 mt-0.5 shrink-0">{icon}</span>
       <div className="flex-1 min-w-0">
         <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-0.5">{label}</p>
@@ -94,7 +94,7 @@ function TaskItem({ task }: { task: PanelTask }) {
         }
       </span>
       <div className="min-w-0">
-        <p className={`text-xs leading-tight truncate ${isDone ? "line-through text-gray-500" : isOverdue ? "text-red-300" : "text-white"}`}>
+        <p className={`text-xs leading-tight truncate ${isDone ? "line-through text-gray-500" : isOverdue ? "text-red-300" : "text-gray-900"}`}>
           {task.title}
         </p>
         {task.dueDate && (
@@ -253,21 +253,21 @@ export function ContactPanel({ conversationId, name, phone, photoUrl, onClose, o
   const assignedName = assignedUser?.name ?? lead?.assignedTo?.name ?? null
 
   return (
-    <div className="w-64 shrink-0 flex flex-col border-l border-gray-700/50 bg-gray-800/40 overflow-y-auto">
+    <div className="w-64 shrink-0 flex flex-col border-l border-gray-200/50 bg-gray-100/40 overflow-y-auto">
 
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700/50">
-        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Contato</span>
-        <button type="button" onClick={onClose} className="p-1 text-gray-500 hover:text-gray-300 rounded">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200/50">
+        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Contato</span>
+        <button type="button" onClick={onClose} className="p-1 text-gray-500 hover:text-gray-600 rounded">
           <X className="h-4 w-4" />
         </button>
       </div>
 
       {/* Avatar + editable name */}
-      <div className="flex flex-col items-center gap-2 px-4 py-5 border-b border-gray-700/50">
+      <div className="flex flex-col items-center gap-2 px-4 py-5 border-b border-gray-200/50">
         {photoUrl && !imgError
           ? <img src={photoUrl} alt={contactName} onError={() => setImgError(true)} className="h-16 w-16 rounded-full object-cover" />
-          : <div className={`h-16 w-16 rounded-full flex items-center justify-center text-white text-xl font-bold ${avatarColor(contactName)}`}>{getInitials(contactName) || "?"}</div>
+          : <div className={`h-16 w-16 rounded-full flex items-center justify-center text-gray-900 text-xl font-bold ${avatarColor(contactName)}`}>{getInitials(contactName) || "?"}</div>
         }
 
         {editingName ? (
@@ -278,18 +278,18 @@ export function ContactPanel({ conversationId, name, phone, photoUrl, onClose, o
               onChange={(e) => setNameInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") saveContactName(); if (e.key === "Escape") setEditingName(false) }}
               disabled={savingName}
-              className="flex-1 text-center text-sm font-semibold bg-gray-700 border border-gray-600 text-white rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="flex-1 text-center text-sm font-semibold bg-gray-200 border border-gray-300 text-gray-900 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-purple-500"
             />
             <button onClick={saveContactName} disabled={savingName} className="text-green-400 hover:text-green-300 shrink-0">
               <Check className="h-3.5 w-3.5" />
             </button>
-            <button onClick={() => setEditingName(false)} className="text-gray-500 hover:text-gray-300 shrink-0">
+            <button onClick={() => setEditingName(false)} className="text-gray-500 hover:text-gray-600 shrink-0">
               <X className="h-3.5 w-3.5" />
             </button>
           </div>
         ) : (
           <button type="button" onClick={startEditingName} className="flex items-center gap-1 group text-center">
-            <p className="text-sm font-semibold text-white">{contactName}</p>
+            <p className="text-sm font-semibold text-gray-900">{contactName}</p>
             <Pencil className="h-3 w-3 text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
           </button>
         )}
@@ -299,17 +299,17 @@ export function ContactPanel({ conversationId, name, phone, photoUrl, onClose, o
       {/* Lead info */}
       <div className="flex-1 px-4 py-3">
         {loading ? (
-          <div className="space-y-3 mt-2">{[1, 2, 3].map((i) => <div key={i} className="h-8 rounded bg-gray-700/40 animate-pulse" />)}</div>
+          <div className="space-y-3 mt-2">{[1, 2, 3].map((i) => <div key={i} className="h-8 rounded bg-gray-200/40 animate-pulse" />)}</div>
         ) : lead ? (
           <>
-            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-3">Lead vinculado</p>
+            <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-3">Lead vinculado</p>
 
             {/* Etapa — editable */}
             <FieldRow icon={<Layers className="h-3.5 w-3.5" />} label="Etapa">
               {editingField === "stage" ? (
                 <select
                   autoFocus
-                  className="w-full text-xs bg-gray-700 text-white rounded px-1.5 py-1 border border-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full text-xs bg-gray-200 text-gray-900 rounded px-1.5 py-1 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-purple-500"
                   value={stage}
                   onChange={(e) => handleStageChange(e.target.value as LeadStage)}
                   onBlur={() => setEditingField(null)}
@@ -333,7 +333,7 @@ export function ContactPanel({ conversationId, name, phone, photoUrl, onClose, o
               {editingField === "source" ? (
                 <select
                   autoFocus
-                  className="w-full text-xs bg-gray-700 text-white rounded px-1.5 py-1 border border-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full text-xs bg-gray-200 text-gray-900 rounded px-1.5 py-1 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-purple-500"
                   value={source}
                   onChange={(e) => handleSourceChange(e.target.value as LeadSource)}
                   onBlur={() => setEditingField(null)}
@@ -341,9 +341,9 @@ export function ContactPanel({ conversationId, name, phone, photoUrl, onClose, o
                   {SOURCE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               ) : (
-                <button type="button" onClick={() => setEditingField("source")} className="text-sm text-white hover:text-blue-400 text-left flex items-center gap-1 group transition-colors">
+                <button type="button" onClick={() => setEditingField("source")} className="text-sm text-gray-900 hover:text-purple-600 text-left flex items-center gap-1 group transition-colors">
                   {SOURCE_LABELS[source]}
-                  <span className="opacity-0 group-hover:opacity-60 text-xs text-gray-400">✎</span>
+                  <span className="opacity-0 group-hover:opacity-60 text-xs text-gray-500">✎</span>
                 </button>
               )}
             </FieldRow>
@@ -353,7 +353,7 @@ export function ContactPanel({ conversationId, name, phone, photoUrl, onClose, o
               {editingField === "assignedTo" ? (
                 <select
                   autoFocus
-                  className="w-full text-xs bg-gray-700 text-white rounded px-1.5 py-1 border border-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full text-xs bg-gray-200 text-gray-900 rounded px-1.5 py-1 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-purple-500"
                   value={assignedToId ?? ""}
                   onChange={(e) => handleAssignedToChange(e.target.value || null)}
                   onBlur={() => setEditingField(null)}
@@ -362,9 +362,9 @@ export function ContactPanel({ conversationId, name, phone, photoUrl, onClose, o
                   {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
                 </select>
               ) : (
-                <button type="button" onClick={() => setEditingField("assignedTo")} className={`text-sm text-left flex items-center gap-1 group transition-colors ${assignedName ? "text-white hover:text-blue-400" : "text-gray-500 italic hover:text-blue-400"}`}>
+                <button type="button" onClick={() => setEditingField("assignedTo")} className={`text-sm text-left flex items-center gap-1 group transition-colors ${assignedName ? "text-gray-900 hover:text-purple-600" : "text-gray-500 italic hover:text-purple-600"}`}>
                   {assignedName ?? "Não atribuído"}
-                  <span className="opacity-0 group-hover:opacity-60 text-xs text-gray-400">✎</span>
+                  <span className="opacity-0 group-hover:opacity-60 text-xs text-gray-500">✎</span>
                 </button>
               )}
             </FieldRow>
@@ -372,7 +372,7 @@ export function ContactPanel({ conversationId, name, phone, photoUrl, onClose, o
             {/* Valor estimado — read-only */}
             {lead.estimatedValue && (
               <FieldRow icon={<span className="text-xs text-gray-500 font-bold">R$</span>} label="Valor estimado">
-                <p className="text-sm text-white">
+                <p className="text-sm text-gray-900">
                   {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(parseFloat(lead.estimatedValue))}
                 </p>
               </FieldRow>
@@ -380,13 +380,13 @@ export function ContactPanel({ conversationId, name, phone, photoUrl, onClose, o
 
             {/* Data de criação */}
             <FieldRow icon={<Calendar className="h-3.5 w-3.5" />} label="Criado em">
-              <p className="text-sm text-white">{formatDate(lead.createdAt)}</p>
+              <p className="text-sm text-gray-900">{formatDate(lead.createdAt)}</p>
             </FieldRow>
 
             {/* Tarefas */}
             {lead.tasks && lead.tasks.length > 0 && (
               <div className="mt-4">
-                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Tarefas</p>
+                <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-2">Tarefas</p>
                 <div className="space-y-0.5">
                   {(lead.tasks as PanelTask[]).map((t) => <TaskItem key={t.id} task={t} />)}
                 </div>
@@ -397,7 +397,7 @@ export function ContactPanel({ conversationId, name, phone, photoUrl, onClose, o
             <div className="mt-4">
               <div className="flex items-center gap-1.5 mb-1.5">
                 <FileText className="h-3.5 w-3.5 text-gray-500" />
-                <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Notas</span>
+                <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Notas</span>
                 {notesSaved && <span className="ml-auto text-[10px] text-green-500">Salvo</span>}
               </div>
               <textarea
@@ -405,7 +405,7 @@ export function ContactPanel({ conversationId, name, phone, photoUrl, onClose, o
                 onChange={(e) => handleNotesChange(e.target.value)}
                 placeholder="Adicione uma nota sobre este contato..."
                 rows={4}
-                className="w-full text-xs bg-gray-800/60 border border-gray-700 text-white rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder:text-gray-600"
+                className="w-full text-xs bg-gray-100/60 border border-gray-200 text-gray-900 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-purple-500 placeholder:text-gray-600"
               />
             </div>
 
@@ -413,7 +413,7 @@ export function ContactPanel({ conversationId, name, phone, photoUrl, onClose, o
               <button
                 type="button"
                 onClick={() => router.push(`/crm/${lead.id}`)}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-gray-700/50 hover:bg-gray-700 text-sm text-gray-300 hover:text-white border border-gray-600/50 transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-sm text-gray-600 hover:text-gray-900 border border-gray-300/50 transition-colors"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
                 Ver no CRM
@@ -429,7 +429,7 @@ export function ContactPanel({ conversationId, name, phone, photoUrl, onClose, o
               type="button"
               onClick={createLead}
               disabled={creating}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-sm text-white transition-colors disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-sm text-gray-900 transition-colors disabled:opacity-50"
             >
               <Plus className="h-4 w-4" />
               {creating ? "Criando..." : "Criar lead"}

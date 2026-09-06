@@ -13,7 +13,7 @@ import type { Conversation, Message } from "@/types/models"
 // ─── Avatar helpers ───────────────────────────────────────────────────────────
 
 const AVATAR_COLORS = [
-  "bg-blue-600", "bg-purple-600", "bg-green-600", "bg-orange-600",
+  "bg-purple-600", "bg-purple-600", "bg-green-600", "bg-orange-600",
   "bg-pink-600", "bg-teal-600", "bg-red-600", "bg-indigo-600",
 ]
 
@@ -34,7 +34,7 @@ function HeaderAvatar({ name, photoUrl, size = 9 }: { name: string; photoUrl?: s
     return <img src={photoUrl} alt={name} onError={() => setErr(true)} className={`${sizeClass} rounded-full object-cover shrink-0`} />
   }
   return (
-    <div className={`${sizeClass} rounded-full flex items-center justify-center shrink-0 text-white text-xs font-bold ${avatarColor(name)}`}>
+    <div className={`${sizeClass} rounded-full flex items-center justify-center shrink-0 text-gray-900 text-xs font-bold ${avatarColor(name)}`}>
       {getInitials(name) || "?"}
     </div>
   )
@@ -338,7 +338,7 @@ export function ChatWindow({
       <div className="flex flex-1 flex-col min-w-0">
 
         {/* ── Header ── */}
-        <div className="shrink-0 border-b border-gray-700/50 px-4 py-3">
+        <div className="shrink-0 border-b border-gray-200/50 px-4 py-3">
           {searchOpen ? (
             <div className="flex items-center gap-2">
               <div className="flex-1 relative">
@@ -353,14 +353,14 @@ export function ChatWindow({
                     if (e.key === "Escape") closeSearch()
                   }}
                   placeholder="Buscar na conversa..."
-                  className="w-full pl-8 pr-3 py-1.5 text-sm bg-gray-800 border border-gray-700 text-white rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder:text-gray-500"
+                  className="w-full pl-8 pr-3 py-1.5 text-sm bg-gray-100 border border-gray-200 text-gray-900 rounded-lg focus:outline-none focus:ring-1 focus:ring-purple-500 placeholder:text-gray-400"
                 />
               </div>
-              {matchIds.length > 0 && <span className="text-xs text-gray-400 shrink-0">{matchCursor + 1}/{matchIds.length}</span>}
+              {matchIds.length > 0 && <span className="text-xs text-gray-500 shrink-0">{matchCursor + 1}/{matchIds.length}</span>}
               {searchQuery && matchIds.length === 0 && <span className="text-xs text-gray-500 shrink-0">Sem resultados</span>}
-              <button type="button" onClick={() => navMatch(-1)} disabled={matchIds.length === 0} className="p-1 text-gray-400 hover:text-white disabled:opacity-30"><ChevronUp className="h-4 w-4" /></button>
-              <button type="button" onClick={() => navMatch(1)} disabled={matchIds.length === 0} className="p-1 text-gray-400 hover:text-white disabled:opacity-30"><ChevronDown className="h-4 w-4" /></button>
-              <button type="button" onClick={closeSearch} className="p-1 text-gray-400 hover:text-white"><X className="h-4 w-4" /></button>
+              <button type="button" onClick={() => navMatch(-1)} disabled={matchIds.length === 0} className="p-1 text-gray-500 hover:text-gray-900 disabled:opacity-30"><ChevronUp className="h-4 w-4" /></button>
+              <button type="button" onClick={() => navMatch(1)} disabled={matchIds.length === 0} className="p-1 text-gray-500 hover:text-gray-900 disabled:opacity-30"><ChevronDown className="h-4 w-4" /></button>
+              <button type="button" onClick={closeSearch} className="p-1 text-gray-500 hover:text-gray-900"><X className="h-4 w-4" /></button>
             </div>
           ) : (
             <div className="flex items-center gap-3">
@@ -372,36 +372,36 @@ export function ChatWindow({
               >
                 <HeaderAvatar name={resolvedName} photoUrl={photoUrl} size={9} />
                 <div className="min-w-0">
-                  <h3 className="font-semibold text-white truncate text-sm">{resolvedName}</h3>
+                  <h3 className="font-semibold text-gray-900 truncate text-sm">{resolvedName}</h3>
                   <p className="text-xs text-gray-500">{conversation.phoneNumber}</p>
                 </div>
               </button>
 
               {/* Actions */}
               <div className="flex items-center gap-1 shrink-0">
-                <button type="button" onClick={openSearch} className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700/50 transition-colors" title="Buscar">
+                <button type="button" onClick={openSearch} className="p-2 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors" title="Buscar">
                   <Search className="h-4 w-4" />
                 </button>
                 <div ref={headerMenuRef} className="relative">
-                  <button type="button" onClick={() => setHeaderMenuOpen((v) => !v)} className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700/50 transition-colors">
+                  <button type="button" onClick={() => setHeaderMenuOpen((v) => !v)} className="p-2 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors">
                     <MoreVertical className="h-4 w-4" />
                   </button>
                   {headerMenuOpen && (
-                    <div className="absolute right-0 top-10 z-50 w-48 rounded-lg border border-gray-700 bg-gray-900 shadow-2xl py-1">
-                      <button type="button" onClick={() => handleHeaderAction(conversation.pinned ? "unpin" : "pin")} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white">
+                    <div className="absolute right-0 top-10 z-50 w-48 rounded-lg border border-gray-200 bg-white shadow-2xl py-1">
+                      <button type="button" onClick={() => handleHeaderAction(conversation.pinned ? "unpin" : "pin")} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900">
                         <Pin className="h-4 w-4" />
                         {conversation.pinned ? "Desfixar conversa" : "Fixar conversa"}
                       </button>
-                      <button type="button" onClick={() => handleHeaderAction(conversation.favorite ? "unfavorite" : "favorite")} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white">
+                      <button type="button" onClick={() => handleHeaderAction(conversation.favorite ? "unfavorite" : "favorite")} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900">
                         <Star className="h-4 w-4" />
                         {conversation.favorite ? "Remover dos Favoritos" : "Favoritar"}
                       </button>
-                      <button type="button" onClick={() => handleHeaderAction(conversation.archived ? "unarchive" : "archive")} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white">
+                      <button type="button" onClick={() => handleHeaderAction(conversation.archived ? "unarchive" : "archive")} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900">
                         <Archive className="h-4 w-4" />
                         {conversation.archived ? "Desarquivar" : "Arquivar"}
                       </button>
-                      <div className="border-t border-gray-800 my-1" />
-                      <button type="button" onClick={() => handleHeaderAction("delete")} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-400 hover:bg-gray-800 hover:text-red-300">
+                      <div className="border-t border-gray-200 my-1" />
+                      <button type="button" onClick={() => handleHeaderAction("delete")} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-400 hover:bg-gray-100 hover:text-red-300">
                         <Trash2 className="h-4 w-4" />
                         Apagar conversa
                       </button>
@@ -422,9 +422,9 @@ export function ChatWindow({
               if (idx >= 0) matchRefs.current[idx]?.scrollIntoView({ behavior: "smooth", block: "center" })
             }}>
               <p className="text-[10px] text-yellow-400 font-medium mb-0.5">Mensagem fixada</p>
-              <p className="text-xs text-gray-300 truncate">{pinnedMessage.content}</p>
+              <p className="text-xs text-gray-600 truncate">{pinnedMessage.content}</p>
             </div>
-            <button type="button" onClick={() => patchConversation({ pinnedMessageId: null })} className="shrink-0 p-1 text-gray-500 hover:text-gray-300">
+            <button type="button" onClick={() => patchConversation({ pinnedMessageId: null })} className="shrink-0 p-1 text-gray-500 hover:text-gray-600">
               <X className="h-3.5 w-3.5" />
             </button>
           </div>
@@ -484,7 +484,7 @@ export function ChatWindow({
         </div>
 
         {/* ── Input ── */}
-        <div className="shrink-0 border-t border-gray-700/50 px-4 py-3">
+        <div className="shrink-0 border-t border-gray-200/50 px-4 py-3">
           {recording ? (
             <div className="flex items-center gap-3">
               <div className="flex-1 flex items-center gap-2 rounded-lg border border-red-500/50 bg-red-500/10 px-4 py-2.5">
@@ -494,7 +494,7 @@ export function ChatWindow({
               <button
                 type="button"
                 onClick={toggleRecording}
-                className="flex items-center justify-center rounded-lg bg-red-600 px-4 py-2.5 text-white hover:bg-red-500 transition-colors"
+                className="flex items-center justify-center rounded-lg bg-red-600 px-4 py-2.5 text-gray-900 hover:bg-red-500 transition-colors"
                 title="Parar e enviar"
               >
                 <MicOff className="h-4 w-4" />
@@ -511,17 +511,17 @@ export function ChatWindow({
                 <button
                   type="button"
                   onClick={() => setAttachMenuOpen((v) => !v)}
-                  className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700/50 transition-colors"
+                  className="p-2 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
                   title="Anexar"
                 >
                   <Paperclip className="h-5 w-5" />
                 </button>
                 {attachMenuOpen && (
-                  <div className="absolute bottom-12 left-0 z-50 w-44 rounded-lg border border-gray-700 bg-gray-900 shadow-2xl py-1">
+                  <div className="absolute bottom-12 left-0 z-50 w-44 rounded-lg border border-gray-200 bg-white shadow-2xl py-1">
                     <button
                       type="button"
                       onClick={() => { imageInputRef.current?.click() }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                     >
                       <Image className="h-4 w-4" />
                       Foto / Vídeo
@@ -529,7 +529,7 @@ export function ChatWindow({
                     <button
                       type="button"
                       onClick={() => { docInputRef.current?.click() }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                     >
                       <FileText className="h-4 w-4" />
                       Documento
@@ -546,14 +546,14 @@ export function ChatWindow({
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Digite uma mensagem..."
                 disabled={sending}
-                className="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-4 py-2.5 text-sm text-white placeholder:text-gray-500 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+                className="flex-1 rounded-lg border border-gray-200 bg-gray-100 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 disabled:opacity-50"
               />
 
               {/* Audio button */}
               <button
                 type="button"
                 onClick={toggleRecording}
-                className="shrink-0 p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700/50 transition-colors"
+                className="shrink-0 p-2 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
                 title="Gravar áudio"
               >
                 <Mic className="h-5 w-5" />
@@ -563,7 +563,7 @@ export function ChatWindow({
               <button
                 type="submit"
                 disabled={sending || !input.trim()}
-                className="shrink-0 flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-white transition-colors hover:bg-blue-500 disabled:opacity-50 disabled:pointer-events-none"
+                className="shrink-0 flex items-center justify-center rounded-lg bg-purple-600 px-4 py-2.5 text-gray-900 transition-colors hover:bg-purple-500 disabled:opacity-50 disabled:pointer-events-none"
               >
                 <Send className="h-4 w-4" />
               </button>

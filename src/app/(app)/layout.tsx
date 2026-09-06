@@ -29,7 +29,7 @@ export default async function AppLayout({
   const overdueCount = await getOverdueCount()
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-950">
+    <div className="flex h-screen overflow-hidden bg-gray-50">
       <Sidebar overdueCount={overdueCount} />
 
       {/* Main content area — offset by sidebar width */}

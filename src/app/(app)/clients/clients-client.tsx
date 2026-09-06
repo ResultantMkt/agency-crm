@@ -52,8 +52,8 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white">Clientes</h2>
-          <p className="mt-1 text-sm text-gray-400">
+          <h2 className="text-2xl font-bold text-gray-900">Clientes</h2>
+          <p className="mt-1 text-sm text-gray-500">
             {clients.length} cliente{clients.length !== 1 ? "s" : ""} cadastrado{clients.length !== 1 ? "s" : ""}
           </p>
         </div>
@@ -65,7 +65,7 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
 
       {/* Tabela */}
       {clients.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-gray-700 p-12 text-center">
+        <div className="rounded-lg border border-dashed border-gray-200 p-12 text-center">
           <p className="text-gray-500 text-sm">Nenhum cliente cadastrado ainda.</p>
           <Button onClick={openCreate} variant="outline" size="sm" className="mt-4">
             <Plus className="h-4 w-4" />
@@ -73,44 +73,44 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
           </Button>
         </div>
       ) : (
-        <div className="rounded-lg border border-gray-700/50 overflow-hidden">
+        <div className="rounded-lg border border-gray-200/50 overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-700/50 bg-gray-800/80">
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              <tr className="border-b border-gray-200/50 bg-gray-100/80">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Nome
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Valor do contrato
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Tipo
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Início
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Ações
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-700/30">
+            <tbody className="divide-y divide-gray-200/30">
               {clients.map((client) => (
                 <tr
                   key={client.id}
-                  className="bg-gray-800/30 hover:bg-gray-800/60 transition-colors"
+                  className="bg-gray-100/30 hover:bg-gray-100/60 transition-colors"
                 >
-                  <td className="px-4 py-3 font-medium text-white">{client.name}</td>
+                  <td className="px-4 py-3 font-medium text-gray-900">{client.name}</td>
                   <td className="px-4 py-3 text-emerald-400 font-medium">
                     {formatCurrency(parseFloat(client.contractValue))}
                   </td>
-                  <td className="px-4 py-3 text-gray-400">
+                  <td className="px-4 py-3 text-gray-500">
                     {BILLING_LABELS[client.billingType]}
                   </td>
-                  <td className="px-4 py-3 text-gray-400">{formatDate(client.startDate)}</td>
+                  <td className="px-4 py-3 text-gray-500">{formatDate(client.startDate)}</td>
                   <td className="px-4 py-3">
                     <ClientStatusBadge status={client.status} />
                   </td>

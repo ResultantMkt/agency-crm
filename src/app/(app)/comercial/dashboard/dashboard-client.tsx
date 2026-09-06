@@ -138,7 +138,7 @@ function MonthGrid({
   ]
   return (
     <div className="w-60">
-      <p className="mb-2 text-center text-sm font-semibold text-white">
+      <p className="mb-2 text-center text-sm font-semibold text-gray-900">
         {MONTH_NAMES_PT[month - 1]} {year}
       </p>
       <div className="grid grid-cols-7">
@@ -158,7 +158,7 @@ function MonthGrid({
               key={ds}
               className={[
                 "relative flex h-8 items-center justify-center",
-                isMid ? "bg-blue-500/15" : "",
+                isMid ? "bg-purple-500/15" : "",
                 isStart && rangeEnd && ds !== rangeEnd ? "bg-gradient-to-r from-transparent to-blue-500/15" : "",
                 isEnd && rangeStart && ds !== rangeStart ? "bg-gradient-to-l from-transparent to-blue-500/15" : "",
               ].join(" ")}
@@ -171,8 +171,8 @@ function MonthGrid({
                 className={[
                   "flex h-7 w-7 items-center justify-center rounded-full text-xs transition-colors",
                   disabled ? "cursor-not-allowed text-gray-600" : "",
-                  (isStart || isEnd) ? "bg-blue-600 font-semibold text-white" : "",
-                  !disabled && !isStart && !isEnd ? "text-gray-300 hover:bg-gray-700 hover:text-white" : "",
+                  (isStart || isEnd) ? "bg-purple-600 font-semibold text-gray-900" : "",
+                  !disabled && !isStart && !isEnd ? "text-gray-600 hover:bg-gray-200 hover:text-gray-900" : "",
                 ].join(" ")}
               >
                 {day}
@@ -245,20 +245,20 @@ function DateRangePicker({ dateFrom, dateTo, onApply }: {
       <button
         type="button"
         onClick={openPicker}
-        className="flex items-center gap-2 rounded-lg border border-gray-700/50 bg-gray-800/50 px-3 py-2 text-sm font-medium text-white hover:bg-gray-700/50 transition-colors"
+        className="flex items-center gap-2 rounded-lg border border-gray-200/50 bg-white px-3 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 transition-colors"
       >
-        <CalendarDays className="h-4 w-4 text-gray-400" />
+        <CalendarDays className="h-4 w-4 text-gray-500" />
         {triggerLabel}
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-2 flex overflow-hidden rounded-xl border border-gray-700 bg-gray-900 shadow-2xl">
-          <div className="w-44 border-r border-gray-700 py-2">
+        <div className="absolute right-0 top-full z-50 mt-2 flex overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl">
+          <div className="w-44 border-r border-gray-200 py-2">
             {shortcuts.map((s) => {
               const active = s.from === dateFrom && s.to === dateTo
               return (
                 <button key={s.label} type="button" onClick={() => { onApply(s.from, s.to); setOpen(false) }}
                   className={["w-full px-4 py-2 text-left text-sm transition-colors",
-                    active ? "bg-blue-600/20 text-blue-400 font-medium" : "text-gray-300 hover:bg-gray-800 hover:text-white",
+                    active ? "bg-purple-600/20 text-purple-600 font-medium" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
                   ].join(" ")}
                 >
                   {s.label}
@@ -268,14 +268,14 @@ function DateRangePicker({ dateFrom, dateTo, onApply }: {
           </div>
           <div className="flex flex-col p-4">
             <div className="mb-3 flex items-center justify-between">
-              <button type="button" onClick={prevMonth} className="rounded p-1 text-gray-400 hover:bg-gray-800 hover:text-white">
+              <button type="button" onClick={prevMonth} className="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-900">
                 <ChevronLeft className="h-4 w-4" />
               </button>
               <div className="flex gap-16">
-                <span className="w-60 text-center text-sm text-gray-400">{MONTH_NAMES_PT[viewLeft.month - 1]} {viewLeft.year}</span>
-                <span className="w-60 text-center text-sm text-gray-400">{MONTH_NAMES_PT[rightMonth - 1]} {rightYear}</span>
+                <span className="w-60 text-center text-sm text-gray-500">{MONTH_NAMES_PT[viewLeft.month - 1]} {viewLeft.year}</span>
+                <span className="w-60 text-center text-sm text-gray-500">{MONTH_NAMES_PT[rightMonth - 1]} {rightYear}</span>
               </div>
-              <button type="button" onClick={nextMonth} className="rounded p-1 text-gray-400 hover:bg-gray-800 hover:text-white">
+              <button type="button" onClick={nextMonth} className="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-900">
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>
@@ -287,19 +287,19 @@ function DateRangePicker({ dateFrom, dateTo, onApply }: {
                 hoverDate={hoverDate} selectingSecond={selectingSecond} maxDate={todayStr}
                 onDayClick={handleDayClick} onDayHover={setHoverDate} />
             </div>
-            <div className="mt-4 flex items-center justify-between border-t border-gray-700 pt-4">
-              <span className="text-sm text-gray-400">
+            <div className="mt-4 flex items-center justify-between border-t border-gray-200 pt-4">
+              <span className="text-sm text-gray-500">
                 {pendingFrom && pendingTo
                   ? `${formatDisplayDate(pendingFrom)} — ${formatDisplayDate(pendingTo)}`
                   : pendingFrom ? `${formatDisplayDate(pendingFrom)} — selecione o fim` : "Selecione o início"}
               </span>
               <div className="flex gap-2">
                 <button type="button" onClick={() => setOpen(false)}
-                  className="rounded-lg px-3 py-1.5 text-sm text-gray-400 hover:text-white transition-colors">
+                  className="rounded-lg px-3 py-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors">
                   Cancelar
                 </button>
                 <button type="button" onClick={handleApply} disabled={!(pendingFrom && pendingTo)}
-                  className="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                  className="rounded-lg bg-purple-600 px-4 py-1.5 text-sm font-medium text-gray-900 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
                   Aplicar
                 </button>
               </div>
@@ -315,9 +315,9 @@ function DateRangePicker({ dateFrom, dateTo, onApply }: {
 
 function MetricCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
-    <div className="rounded-lg border border-gray-700/50 bg-gray-800/50 p-5">
+    <div className="rounded-lg border border-gray-200/50 bg-white p-5">
       <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{label}</p>
-      <p className="mt-2 text-2xl font-bold text-white">{value}</p>
+      <p className="mt-2 text-2xl font-bold text-gray-900">{value}</p>
       {sub && <p className="mt-1 text-xs text-gray-500">{sub}</p>}
     </div>
   )
@@ -342,16 +342,16 @@ function InvestmentCard({ periodKey, value, onSave }: {
   }
 
   return (
-    <div className="rounded-lg border border-gray-700/50 bg-gray-800/50 p-5">
+    <div className="rounded-lg border border-gray-200/50 bg-white p-5">
       <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Investimento em Tráfego</p>
       {editing ? (
         <div className="mt-2 flex items-center gap-2">
-          <span className="text-gray-400">R$</span>
+          <span className="text-gray-500">R$</span>
           <input
             type="number" min="0" step="0.01" value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") setEditing(false) }}
-            className="w-32 rounded border border-gray-600 bg-gray-900 px-2 py-1 text-lg font-bold text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-32 rounded border border-gray-300 bg-white px-2 py-1 text-lg font-bold text-gray-900 focus:outline-none focus:ring-1 focus:ring-purple-500"
             autoFocus
           />
           <button onClick={save} disabled={saving} className="rounded p-1 text-emerald-400 hover:bg-emerald-900/30">
@@ -363,10 +363,10 @@ function InvestmentCard({ periodKey, value, onSave }: {
         </div>
       ) : (
         <div className="group mt-2 flex items-center gap-2">
-          <p className="text-2xl font-bold text-white">{formatBRL(value)}</p>
+          <p className="text-2xl font-bold text-gray-900">{formatBRL(value)}</p>
           <button
             onClick={() => { setInput(String(value)); setEditing(true) }}
-            className="rounded p-1 text-gray-600 opacity-0 transition-opacity group-hover:opacity-100 hover:text-gray-300"
+            className="rounded p-1 text-gray-600 opacity-0 transition-opacity group-hover:opacity-100 hover:text-gray-600"
           >
             <Pencil className="h-3.5 w-3.5" />
           </button>
@@ -379,9 +379,9 @@ function InvestmentCard({ periodKey, value, onSave }: {
 
 function StageCard({ label, count }: { label: string; count: number }) {
   return (
-    <div className="rounded-lg border border-gray-700/50 bg-gray-800/50 p-5">
+    <div className="rounded-lg border border-gray-200/50 bg-white p-5">
       <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{label}</p>
-      <p className="mt-2 text-3xl font-bold text-white">{count}</p>
+      <p className="mt-2 text-3xl font-bold text-gray-900">{count}</p>
     </div>
   )
 }
@@ -391,13 +391,13 @@ function FunnelBar({ label, count, maxCount }: { label: string; count: number; m
   return (
     <div>
       <div className="mb-1.5 flex items-center justify-between">
-        <span className="text-sm font-medium text-gray-300">{label}</span>
+        <span className="text-sm font-medium text-gray-600">{label}</span>
         <span className="text-sm text-gray-500">
           {count} <span className="text-gray-600">({pct.toFixed(0)}%)</span>
         </span>
       </div>
-      <div className="h-3 w-full overflow-hidden rounded-full bg-gray-700">
-        <div className="h-3 rounded-full bg-blue-500 transition-all" style={{ width: `${pct}%` }} />
+      <div className="h-3 w-full overflow-hidden rounded-full bg-gray-200">
+        <div className="h-3 rounded-full bg-purple-500 transition-all" style={{ width: `${pct}%` }} />
       </div>
     </div>
   )
@@ -407,12 +407,12 @@ function ConversionCard({ from, to, rate }: { from: string; to: string; rate: nu
   const rateColor = rate >= 50 ? "text-emerald-400" : rate >= 25 ? "text-yellow-400" : "text-red-400"
   const barColor = rate >= 50 ? "bg-emerald-500" : rate >= 25 ? "bg-yellow-500" : "bg-red-500"
   return (
-    <div className="rounded-lg border border-gray-700/30 bg-gray-900/50 p-5">
+    <div className="rounded-lg border border-gray-200/30 bg-white/50 p-5">
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm font-medium text-gray-300">{from} → {to}</p>
+        <p className="text-sm font-medium text-gray-600">{from} → {to}</p>
         <span className={`text-2xl font-bold ${rateColor}`}>{rate.toFixed(1)}%</span>
       </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-gray-700">
+      <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200">
         <div className={`h-2 rounded-full transition-all ${barColor}`} style={{ width: `${Math.min(rate, 100)}%` }} />
       </div>
     </div>
@@ -496,8 +496,8 @@ export function DashboardClient() {
               ))}
             </div>
 
-            <div className="rounded-lg border border-gray-700/50 bg-gray-800/50 p-6">
-              <h4 className="mb-1 text-base font-semibold text-white">Progressão do Funil</h4>
+            <div className="rounded-lg border border-gray-200/50 bg-white p-6">
+              <h4 className="mb-1 text-base font-semibold text-gray-900">Progressão do Funil</h4>
               <p className="mb-5 text-xs text-gray-500">
                 Barras relativas ao estágio com maior volume no período
               </p>

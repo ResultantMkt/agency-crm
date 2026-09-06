@@ -59,7 +59,7 @@ export function LeadTasksClient({ leadId, initialTasks, users }: LeadTasksClient
   return (
     <section>
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-base font-semibold text-white">
+        <h3 className="text-base font-semibold text-gray-900">
           Tarefas ({tasks.length})
         </h3>
         <Button variant="ghost" size="sm" onClick={() => setModalOpen(true)}>
@@ -75,7 +75,7 @@ export function LeadTasksClient({ leadId, initialTasks, users }: LeadTasksClient
           {tasks.map((task) => (
             <li
               key={task.id}
-              className="flex items-start gap-3 bg-gray-800/60 border border-gray-700/50 rounded-lg px-4 py-3"
+              className="flex items-start gap-3 bg-gray-100/60 border border-gray-200/50 rounded-lg px-4 py-3"
             >
               <button
                 type="button"
@@ -94,7 +94,7 @@ export function LeadTasksClient({ leadId, initialTasks, users }: LeadTasksClient
                 <p
                   className={cn(
                     "text-sm font-medium",
-                    task.status === "DONE" ? "text-gray-500 line-through" : "text-white"
+                    task.status === "DONE" ? "text-gray-500 line-through" : "text-gray-900"
                   )}
                 >
                   {task.title}

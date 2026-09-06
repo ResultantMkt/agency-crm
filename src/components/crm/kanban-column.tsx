@@ -24,14 +24,14 @@ export function KanbanColumn({ stage, label, leads, users, color, onDeleteLead, 
       ? "text-emerald-400 border-emerald-500/40"
       : stage === "LOST"
         ? "text-red-400 border-red-500/40"
-        : "text-gray-300 border-gray-700"
+        : "text-gray-600 border-gray-200"
 
   const countBadgeClass =
     stage === "CLOSED"
       ? "bg-emerald-500/20 text-emerald-400"
       : stage === "LOST"
         ? "bg-red-500/20 text-red-400"
-        : "bg-gray-700 text-gray-400"
+        : "bg-gray-200 text-gray-500"
 
   return (
     <div className="flex flex-col" style={{ minWidth: 280, width: 280 }}>
@@ -58,12 +58,12 @@ export function KanbanColumn({ stage, label, leads, users, color, onDeleteLead, 
         ref={setNodeRef}
         className={cn(
           "flex-1 flex flex-col gap-2 p-1 rounded-b-lg min-h-[120px] transition-colors",
-          isOver ? "bg-blue-500/5 ring-1 ring-inset ring-blue-500/30" : "bg-transparent"
+          isOver ? "bg-purple-500/5 ring-1 ring-inset ring-purple-500/30" : "bg-transparent"
         )}
       >
         <SortableContext items={leads.map((l) => l.id)} strategy={verticalListSortingStrategy}>
           {leads.length === 0 ? (
-            <div className="flex items-center justify-center h-20 rounded-lg border border-dashed border-gray-700/60 text-gray-600 text-xs">
+            <div className="flex items-center justify-center h-20 rounded-lg border border-dashed border-gray-200/60 text-gray-600 text-xs">
               Arraste um lead aqui
             </div>
           ) : (

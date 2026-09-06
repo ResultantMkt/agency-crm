@@ -32,7 +32,7 @@ function MetricCard({
   color: "blue" | "green" | "red" | "yellow" | "purple"
 }) {
   const colorMap = {
-    blue: "text-blue-400 bg-blue-500/10",
+    blue: "text-purple-600 bg-purple-500/10",
     green: "text-emerald-400 bg-emerald-500/10",
     red: "text-red-400 bg-red-500/10",
     yellow: "text-yellow-400 bg-yellow-500/10",
@@ -40,11 +40,11 @@ function MetricCard({
   }
 
   return (
-    <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg p-6">
+    <div className="bg-white border border-gray-200/50 rounded-lg p-6">
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-400">{title}</p>
-          <p className="mt-2 text-2xl font-bold text-white truncate">{value}</p>
+          <p className="text-sm font-medium text-gray-500">{title}</p>
+          <p className="mt-2 text-2xl font-bold text-gray-900 truncate">{value}</p>
           {subtitle && (
             <p className="mt-1 text-xs text-gray-500 truncate">{subtitle}</p>
           )}
@@ -270,8 +270,8 @@ export default async function DashboardPage() {
       {/* Funil e conversões */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Funil */}
-        <div className="rounded-lg border border-gray-700/50 bg-gray-800/50 p-6">
-          <h3 className="mb-1 text-base font-semibold text-white">Funil de Leads</h3>
+        <div className="rounded-lg border border-gray-200/50 bg-white p-6">
+          <h3 className="mb-1 text-base font-semibold text-gray-900">Funil de Leads</h3>
           <p className="mb-4 text-xs text-gray-500">
             {formatMonth(now)} — {totalLeads} lead{totalLeads !== 1 ? "s" : ""} no total
           </p>
@@ -285,19 +285,19 @@ export default async function DashboardPage() {
                   ? "bg-emerald-500"
                   : stage === "LOST"
                   ? "bg-red-500"
-                  : "bg-blue-500"
+                  : "bg-purple-500"
 
               return (
                 <div key={stage}>
                   <div className="mb-1 flex items-center justify-between">
-                    <span className="text-xs font-medium text-gray-300">
+                    <span className="text-xs font-medium text-gray-600">
                       {STAGE_LABELS[stage]}
                     </span>
                     <span className="text-xs text-gray-500">
                       {count} ({pct.toFixed(0)}%)
                     </span>
                   </div>
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-gray-700">
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200">
                     <div
                       className={`h-2 rounded-full transition-all ${barColor}`}
                       style={{ width: `${pct}%` }}
@@ -310,8 +310,8 @@ export default async function DashboardPage() {
         </div>
 
         {/* Taxas de conversão */}
-        <div className="rounded-lg border border-gray-700/50 bg-gray-800/50 p-6">
-          <h3 className="mb-1 text-base font-semibold text-white">Taxas de Conversão</h3>
+        <div className="rounded-lg border border-gray-200/50 bg-white p-6">
+          <h3 className="mb-1 text-base font-semibold text-gray-900">Taxas de Conversão</h3>
           <p className="mb-4 text-xs text-gray-500">{formatMonth(now)}</p>
 
           <div className="space-y-4">
@@ -348,13 +348,13 @@ export default async function DashboardPage() {
               return (
                 <div
                   key={item.label}
-                  className="rounded-lg border border-gray-700/30 bg-gray-900/50 p-4"
+                  className="rounded-lg border border-gray-200/30 bg-white/50 p-4"
                 >
                   <div className="mb-2 flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-300">{item.label}</span>
+                    <span className="text-sm font-medium text-gray-600">{item.label}</span>
                     <span className={`text-lg font-bold ${rateColor}`}>{item.rate}%</span>
                   </div>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-700">
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-200">
                     <div
                       className={`h-1.5 rounded-full ${barColor}`}
                       style={{ width: `${Math.min(rate, 100)}%` }}

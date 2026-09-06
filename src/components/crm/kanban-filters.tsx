@@ -89,12 +89,12 @@ export function KanbanFilters({ filters, users, onChange }: KanbanFiltersProps) 
         variant={count > 0 ? "default" : "outline"}
         size="md"
         onClick={() => setOpen((v) => !v)}
-        className={count > 0 ? "bg-blue-600 hover:bg-blue-700 border-transparent" : ""}
+        className={count > 0 ? "bg-purple-600 hover:bg-purple-700 border-transparent" : ""}
       >
         <Filter className="h-4 w-4" />
         Filtros
         {count > 0 && (
-          <span className="ml-1 inline-flex items-center justify-center h-4 min-w-4 px-0.5 rounded-full bg-white/20 text-white text-[10px] font-bold">
+          <span className="ml-1 inline-flex items-center justify-center h-4 min-w-4 px-0.5 rounded-full bg-white/20 text-gray-900 text-[10px] font-bold">
             {count}
           </span>
         )}
@@ -102,15 +102,15 @@ export function KanbanFilters({ filters, users, onChange }: KanbanFiltersProps) 
 
       {/* Panel */}
       {open && (
-        <div className="absolute right-0 top-11 z-50 w-[320px] rounded-xl border border-gray-700 bg-gray-900 shadow-2xl">
+        <div className="absolute right-0 top-11 z-50 w-[320px] rounded-xl border border-gray-200 bg-white shadow-2xl">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-gray-800">
-            <span className="text-sm font-semibold text-white">Filtros</span>
+          <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-gray-200">
+            <span className="text-sm font-semibold text-gray-900">Filtros</span>
             {count > 0 && (
               <button
                 type="button"
                 onClick={() => onChange(EMPTY_FILTERS)}
-                className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-500 transition-colors"
               >
                 <X className="h-3 w-3" />
                 Limpar tudo
@@ -193,7 +193,7 @@ export function KanbanFilters({ filters, users, onChange }: KanbanFiltersProps) 
                     type="date"
                     value={filters.createdFrom}
                     onChange={(e) => onChange({ ...filters, createdFrom: e.target.value })}
-                    className="w-full text-xs bg-gray-800 border border-gray-700 text-white rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="w-full text-xs bg-gray-100 border border-gray-200 text-gray-900 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-purple-500"
                   />
                 </div>
                 <div>
@@ -205,7 +205,7 @@ export function KanbanFilters({ filters, users, onChange }: KanbanFiltersProps) 
                     value={filters.createdTo}
                     min={filters.createdFrom || undefined}
                     onChange={(e) => onChange({ ...filters, createdTo: e.target.value })}
-                    className="w-full text-xs bg-gray-800 border border-gray-700 text-white rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="w-full text-xs bg-gray-100 border border-gray-200 text-gray-900 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-purple-500"
                   />
                 </div>
               </div>
@@ -213,7 +213,7 @@ export function KanbanFilters({ filters, users, onChange }: KanbanFiltersProps) 
                 <button
                   type="button"
                   onClick={() => onChange({ ...filters, createdFrom: "", createdTo: "" })}
-                  className="mt-1.5 text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                  className="mt-1.5 text-xs text-gray-500 hover:text-gray-600 transition-colors"
                 >
                   Limpar datas
                 </button>
@@ -237,7 +237,7 @@ function FilterSection({
 }) {
   return (
     <div>
-      <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">
+      <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-2">
         {title}
       </p>
       {children}
@@ -259,19 +259,19 @@ function FilterCheckbox({
       <div
         className={`h-4 w-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
           checked
-            ? "bg-blue-600 border-blue-600"
-            : "bg-gray-800 border-gray-600 group-hover:border-gray-500"
+            ? "bg-purple-600 border-purple-600"
+            : "bg-gray-100 border-gray-300 group-hover:border-gray-500"
         }`}
         onClick={onChange}
       >
         {checked && (
-          <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 10 8" fill="none">
+          <svg className="h-2.5 w-2.5 text-gray-900" viewBox="0 0 10 8" fill="none">
             <path d="M1 4l3 3 5-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         )}
       </div>
       <span
-        className={`text-xs truncate transition-colors ${checked ? "text-white" : "text-gray-400 group-hover:text-gray-300"}`}
+        className={`text-xs truncate transition-colors ${checked ? "text-gray-900" : "text-gray-500 group-hover:text-gray-600"}`}
         onClick={onChange}
       >
         {label}

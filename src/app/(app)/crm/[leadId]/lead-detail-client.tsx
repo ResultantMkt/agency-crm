@@ -35,9 +35,9 @@ export function LeadDetailClient({ lead }: LeadDetailClientProps) {
   }
 
   return (
-    <section className="bg-gray-800/60 border border-gray-700/50 rounded-lg px-4 py-4">
+    <section className="bg-white border border-gray-200 rounded-lg px-4 py-4">
       <div className="flex items-center justify-between mb-2">
-        <Label className="text-sm font-semibold text-white">Notas</Label>
+        <Label className="text-sm font-semibold text-gray-900">Notas</Label>
         {!editing ? (
           <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
             Editar
@@ -74,7 +74,7 @@ export function LeadDetailClient({ lead }: LeadDetailClientProps) {
           {error && <p className="text-xs text-red-400 mt-1.5">{error}</p>}
         </>
       ) : (
-        <p className="text-sm text-gray-400 whitespace-pre-wrap">
+        <p className="text-sm text-gray-500 whitespace-pre-wrap">
           {notes || <span className="italic text-gray-600">Sem notas.</span>}
         </p>
       )}

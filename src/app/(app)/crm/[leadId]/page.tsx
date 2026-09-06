@@ -27,8 +27,8 @@ const STAGE_LABELS: Record<LeadStage, string> = {
 }
 
 const STAGE_COLORS: Record<LeadStage, string> = {
-  LEAD: "bg-gray-500/20 text-gray-400",
-  MQL: "bg-blue-500/20 text-blue-400",
+  LEAD: "bg-gray-500/20 text-gray-500",
+  MQL: "bg-purple-500/20 text-purple-600",
   SCREENING_SCHEDULED: "bg-yellow-500/20 text-yellow-400",
   SCREENING_DONE: "bg-orange-500/20 text-orange-400",
   CLOSING_MEETING: "bg-violet-500/20 text-violet-400",
@@ -79,7 +79,7 @@ export default async function LeadDetailPage({
       {/* Back */}
       <Link
         href="/crm"
-        className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
+        className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
         Voltar ao Kanban
@@ -88,12 +88,12 @@ export default async function LeadDetailPage({
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-white">{lead.name}</h2>
+          <h2 className="text-2xl font-bold text-gray-900">{lead.name}</h2>
           <div className="flex items-center gap-3 mt-1">
-            <p className="text-sm text-gray-400">{lead.phone}</p>
+            <p className="text-sm text-gray-500">{lead.phone}</p>
             <Link
               href={`/chat?phone=${encodeURIComponent(lead.phone)}`}
-              className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+              className="inline-flex items-center gap-1 text-xs text-purple-600 hover:text-purple-500 transition-colors"
               title="Abrir conversa no WhatsApp"
             >
               <MessageSquare className="h-3.5 w-3.5" />
@@ -122,7 +122,7 @@ export default async function LeadDetailPage({
 
       {/* Timeline de histórico */}
       <section>
-        <h3 className="text-base font-semibold text-white mb-3">Histórico de estágios</h3>
+        <h3 className="text-base font-semibold text-gray-900 mb-3">Histórico de estágios</h3>
         <LeadHistoryClient leadId={lead.id} initialHistory={lead.history} />
       </section>
 

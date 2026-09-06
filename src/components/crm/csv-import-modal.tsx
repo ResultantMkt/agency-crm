@@ -302,15 +302,15 @@ export function CsvImportModal({ open, onClose, onSuccess }: CsvImportModalProps
 
         <div className="space-y-5 py-2">
           {/* Template download */}
-          <div className="flex items-center justify-between rounded-lg border border-gray-700/50 bg-gray-800/40 px-4 py-3">
+          <div className="flex items-center justify-between rounded-lg border border-gray-200/50 bg-gray-100/40 px-4 py-3">
             <div>
-              <p className="text-sm font-medium text-white">Modelo de CSV</p>
+              <p className="text-sm font-medium text-gray-900">Modelo de CSV</p>
               <p className="text-xs text-gray-500">Nome, Telefone, Email, Origem, Estágio, Valor, Notas</p>
             </div>
             <button
               type="button"
               onClick={downloadTemplate}
-              className="flex items-center gap-1.5 text-sm text-blue-400 hover:text-blue-300 transition-colors"
+              className="flex items-center gap-1.5 text-sm text-purple-600 hover:text-purple-500 transition-colors"
             >
               <Download className="h-4 w-4" />
               Baixar modelo
@@ -321,10 +321,10 @@ export function CsvImportModal({ open, onClose, onSuccess }: CsvImportModalProps
           <div>
             <label
               htmlFor="csv-upload"
-              className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-700 bg-gray-800/30 px-6 py-8 transition-colors hover:border-gray-600 hover:bg-gray-800/50"
+              className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-200 bg-gray-100/30 px-6 py-8 transition-colors hover:border-gray-300 hover:bg-white"
             >
               <Upload className="h-8 w-8 text-gray-500" />
-              <span className="text-sm text-gray-400">
+              <span className="text-sm text-gray-500">
                 {fileName ?? "Clique para selecionar o arquivo CSV"}
               </span>
               {hasFile && !result && (
@@ -371,8 +371,8 @@ export function CsvImportModal({ open, onClose, onSuccess }: CsvImportModalProps
 
           {/* Import result */}
           {result && (
-            <div className="rounded-lg border border-gray-700/50 bg-gray-800/50 p-4 space-y-3">
-              <p className="text-sm font-semibold text-white">Resultado da importação</p>
+            <div className="rounded-lg border border-gray-200/50 bg-white p-4 space-y-3">
+              <p className="text-sm font-semibold text-gray-900">Resultado da importação</p>
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm text-emerald-400">
                   <CheckCircle2 className="h-4 w-4 shrink-0" />

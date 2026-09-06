@@ -17,8 +17,8 @@ const STAGE_LABELS: Record<LeadStage, string> = {
 }
 
 const STAGE_COLORS: Record<LeadStage, string> = {
-  LEAD: "bg-gray-500/20 text-gray-400",
-  MQL: "bg-blue-500/20 text-blue-400",
+  LEAD: "bg-gray-500/20 text-gray-500",
+  MQL: "bg-purple-500/20 text-purple-600",
   SCREENING_SCHEDULED: "bg-yellow-500/20 text-yellow-400",
   SCREENING_DONE: "bg-orange-500/20 text-orange-400",
   CLOSING_MEETING: "bg-violet-500/20 text-violet-400",
@@ -66,8 +66,8 @@ function HistoryItem({ item, leadId, onUpdate }: {
 
   return (
     <li className="ml-4">
-      <div className="absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full bg-blue-500 border-2 border-gray-900" />
-      <div className="bg-gray-800/60 border border-gray-700/50 rounded-lg px-4 py-3">
+      <div className="absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full bg-purple-500 border-2 border-gray-900" />
+      <div className="bg-gray-100/60 border border-gray-200/50 rounded-lg px-4 py-3">
         {/* Stage badges */}
         <div className="flex items-center gap-2 flex-wrap">
           {item.fromStage && (
@@ -95,7 +95,7 @@ function HistoryItem({ item, leadId, onUpdate }: {
               type="button"
               onClick={() => setEditing(true)}
               title={item.comment ? "Editar observação" : "Adicionar observação"}
-              className="text-gray-600 hover:text-blue-400 transition-colors"
+              className="text-gray-600 hover:text-purple-600 transition-colors"
             >
               <MessageSquare className="h-3.5 w-3.5" />
             </button>
@@ -104,13 +104,13 @@ function HistoryItem({ item, leadId, onUpdate }: {
 
         {/* System note */}
         {item.note && (
-          <p className="text-xs text-gray-400 mt-1.5">{item.note}</p>
+          <p className="text-xs text-gray-500 mt-1.5">{item.note}</p>
         )}
 
         {/* User comment */}
         {!editing && item.comment && (
-          <div className="mt-2 pt-2 border-t border-gray-700/50">
-            <p className="text-xs text-gray-300 whitespace-pre-wrap">{item.comment}</p>
+          <div className="mt-2 pt-2 border-t border-gray-200/50">
+            <p className="text-xs text-gray-600 whitespace-pre-wrap">{item.comment}</p>
             <p className="text-[10px] text-gray-600 mt-1">
               {item.commentByName} · {item.commentAt ? formatDate(item.commentAt) : ""}
             </p>
@@ -119,21 +119,21 @@ function HistoryItem({ item, leadId, onUpdate }: {
 
         {/* Inline comment editor */}
         {editing && (
-          <div className="mt-2 pt-2 border-t border-gray-700/50 space-y-2">
+          <div className="mt-2 pt-2 border-t border-gray-200/50 space-y-2">
             <textarea
               autoFocus
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder="Escreva uma observação..."
               rows={3}
-              className="w-full text-xs bg-gray-900/60 border border-gray-600 rounded-md px-3 py-2 text-gray-200 placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+              className="w-full text-xs bg-white/60 border border-gray-300 rounded-md px-3 py-2 text-gray-800 placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500 resize-none"
             />
             <div className="flex items-center gap-2 justify-end">
               <button
                 type="button"
                 onClick={cancel}
                 disabled={saving}
-                className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-600 transition-colors"
               >
                 <X className="h-3 w-3" />
                 Cancelar
@@ -142,7 +142,7 @@ function HistoryItem({ item, leadId, onUpdate }: {
                 type="button"
                 onClick={save}
                 disabled={saving}
-                className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50"
+                className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-500 transition-colors disabled:opacity-50"
               >
                 <Check className="h-3 w-3" />
                 {saving ? "Salvando…" : "Salvar"}
@@ -167,7 +167,7 @@ export function LeadHistoryClient({ leadId, initialHistory }: Props) {
   }
 
   return (
-    <ol className="relative border-l border-gray-700 ml-3 space-y-4">
+    <ol className="relative border-l border-gray-200 ml-3 space-y-4">
       {history.map((h) => (
         <HistoryItem key={h.id} item={h} leadId={leadId} onUpdate={handleUpdate} />
       ))}

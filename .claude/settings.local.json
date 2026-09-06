@@ -14,7 +14,11 @@
       "Bash(vercel *)",
       "Bash(npx tsc *)",
       "Bash(npm install *)",
-      "Bash(node -e \"require\\('@neondatabase/serverless'\\); require\\('@prisma/adapter-neon'\\); console.log\\('ok'\\)\")"
+      "Bash(node -e \"require\\('@neondatabase/serverless'\\); require\\('@prisma/adapter-neon'\\); console.log\\('ok'\\)\")",
+      "Bash(openssl rand *)",
+      "Bash(echo \"LOG_PID=$!\")",
+      "Bash(git commit *)",
+      "Bash(node -e ' *)"
     ]
   }
 }

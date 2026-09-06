@@ -63,7 +63,7 @@ export default function MetaPageSelectPage() {
         <Card className="w-full max-w-md">
           <CardContent className="pt-6 text-center space-y-4">
             <XCircle className="h-10 w-10 text-red-400 mx-auto" />
-            <p className="text-sm text-gray-300">
+            <p className="text-sm text-gray-600">
               Sessão expirada ou inválida. Inicie o fluxo novamente.
             </p>
             <Button
@@ -98,16 +98,16 @@ export default function MetaPageSelectPage() {
 
           {pages.length === 0 ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+              <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
             </div>
           ) : (
             pages.map((page) => (
               <div
                 key={page.id}
-                className="flex items-center justify-between rounded-lg border border-gray-700 bg-gray-800/50 px-4 py-3 gap-4"
+                className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 gap-4"
               >
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-white truncate">{page.name}</p>
+                  <p className="text-sm font-medium text-gray-900 truncate">{page.name}</p>
                   <p className="text-xs text-gray-500 font-mono mt-0.5">ID: {page.id}</p>
                 </div>
                 <Button
@@ -139,7 +139,7 @@ export default function MetaPageSelectPage() {
               type="button"
               disabled={connecting !== null}
               onClick={() => router.push("/settings/integrations")}
-              className="text-xs text-gray-500 hover:text-gray-300 transition-colors disabled:opacity-40"
+              className="text-xs text-gray-500 hover:text-gray-600 transition-colors disabled:opacity-40"
             >
               Cancelar e voltar
             </button>

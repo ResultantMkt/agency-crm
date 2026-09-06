@@ -183,7 +183,7 @@ export function KanbanBoard({ initialLeads, users }: KanbanBoardProps) {
             placeholder="Buscar lead..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-9 pl-9 pr-3 w-48 text-sm bg-gray-900 border border-gray-700 text-white rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder:text-gray-500"
+            className="h-9 pl-9 pr-3 w-48 text-sm bg-white border border-gray-200 text-gray-900 rounded-lg focus:outline-none focus:ring-1 focus:ring-purple-500 placeholder:text-gray-400"
           />
         </div>
         <KanbanFilters filters={filters} users={users} onChange={setFilters} />

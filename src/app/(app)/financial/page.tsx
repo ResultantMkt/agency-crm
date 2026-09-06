@@ -116,16 +116,16 @@ export default function FinancialPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setSelectedMonth((d) => addMonths(d, -1))}
-            className="rounded-lg border border-gray-700 bg-gray-800 p-1.5 text-gray-400 hover:text-white transition-colors"
+            className="rounded-lg border border-gray-200 bg-gray-100 p-1.5 text-gray-500 hover:text-gray-900 transition-colors"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <span className="min-w-[130px] text-center text-sm font-medium capitalize text-white">
+          <span className="min-w-[130px] text-center text-sm font-medium capitalize text-gray-900">
             {formatMonth(selectedMonth)}
           </span>
           <button
             onClick={() => setSelectedMonth((d) => addMonths(d, 1))}
-            className="rounded-lg border border-gray-700 bg-gray-800 p-1.5 text-gray-400 hover:text-white transition-colors"
+            className="rounded-lg border border-gray-200 bg-gray-100 p-1.5 text-gray-500 hover:text-gray-900 transition-colors"
           >
             <ChevronRight className="h-4 w-4" />
           </button>
@@ -133,15 +133,15 @@ export default function FinancialPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 rounded-lg border border-gray-700/50 bg-gray-800/50 p-1 w-fit">
+      <div className="flex gap-1 rounded-lg border border-gray-200/50 bg-white p-1 w-fit">
         {(["expenses", "receivables"] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
             className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
               tab === t
-                ? "bg-gray-700 text-white shadow-sm"
-                : "text-gray-400 hover:text-white"
+                ? "bg-gray-200 text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-900"
             }`}
           >
             {t === "expenses" ? "Despesas" : "Recebíveis"}
@@ -151,9 +151,9 @@ export default function FinancialPage() {
 
       {/* Conteúdo da tab */}
       {tab === "expenses" && (
-        <div className="rounded-lg border border-gray-700/50 bg-gray-800/50">
-          <div className="flex items-center justify-between border-b border-gray-700/50 px-6 py-4">
-            <h3 className="text-base font-semibold text-white">Despesas</h3>
+        <div className="rounded-lg border border-gray-200/50 bg-white">
+          <div className="flex items-center justify-between border-b border-gray-200/50 px-6 py-4">
+            <h3 className="text-base font-semibold text-gray-900">Despesas</h3>
             <Button
               size="sm"
               onClick={() => {
@@ -169,7 +169,7 @@ export default function FinancialPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-700/50">
+                <tr className="border-b border-gray-200/50">
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                     Descrição
                   </th>
@@ -190,7 +190,7 @@ export default function FinancialPage() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-700/30">
+              <tbody className="divide-y divide-gray-200/30">
                 {loading ? (
                   <tr>
                     <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
@@ -205,15 +205,15 @@ export default function FinancialPage() {
                   </tr>
                 ) : (
                   expenses.map((expense) => (
-                    <tr key={expense.id} className="hover:bg-gray-700/20 transition-colors">
-                      <td className="px-6 py-4 text-gray-200">{expense.description}</td>
+                    <tr key={expense.id} className="hover:bg-gray-200/20 transition-colors">
+                      <td className="px-6 py-4 text-gray-800">{expense.description}</td>
                       <td className="px-6 py-4">
                         <Badge variant="outline">{expense.category}</Badge>
                       </td>
-                      <td className="px-6 py-4 text-right font-medium text-white">
+                      <td className="px-6 py-4 text-right font-medium text-gray-900">
                         {formatCurrency(parseFloat(expense.value))}
                       </td>
-                      <td className="px-6 py-4 text-center text-gray-400">
+                      <td className="px-6 py-4 text-center text-gray-500">
                         Dia {expense.dueDay}
                       </td>
                       <td className="px-6 py-4 text-center">
@@ -230,13 +230,13 @@ export default function FinancialPage() {
                               setEditingExpense(expense)
                               setExpenseFormOpen(true)
                             }}
-                            className="rounded p-1 text-gray-400 hover:text-white transition-colors"
+                            className="rounded p-1 text-gray-500 hover:text-gray-900 transition-colors"
                           >
                             <Pencil className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => deleteExpense(expense.id)}
-                            className="rounded p-1 text-gray-400 hover:text-red-400 transition-colors"
+                            className="rounded p-1 text-gray-500 hover:text-red-400 transition-colors"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -248,11 +248,11 @@ export default function FinancialPage() {
               </tbody>
               {expenses.length > 0 && (
                 <tfoot>
-                  <tr className="border-t border-gray-700/50 bg-gray-900/30">
-                    <td colSpan={2} className="px-6 py-3 text-sm font-semibold text-gray-300">
+                  <tr className="border-t border-gray-200/50 bg-white/30">
+                    <td colSpan={2} className="px-6 py-3 text-sm font-semibold text-gray-600">
                       Total
                     </td>
-                    <td className="px-6 py-3 text-right text-sm font-bold text-white">
+                    <td className="px-6 py-3 text-right text-sm font-bold text-gray-900">
                       {formatCurrency(totalExpenses)}
                     </td>
                     <td colSpan={3} />
@@ -265,9 +265,9 @@ export default function FinancialPage() {
       )}
 
       {tab === "receivables" && (
-        <div className="rounded-lg border border-gray-700/50 bg-gray-800/50">
-          <div className="flex items-center justify-between border-b border-gray-700/50 px-6 py-4">
-            <h3 className="text-base font-semibold text-white">Recebíveis</h3>
+        <div className="rounded-lg border border-gray-200/50 bg-white">
+          <div className="flex items-center justify-between border-b border-gray-200/50 px-6 py-4">
+            <h3 className="text-base font-semibold text-gray-900">Recebíveis</h3>
             <Button
               size="sm"
               onClick={() => {
@@ -283,7 +283,7 @@ export default function FinancialPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-700/50">
+                <tr className="border-b border-gray-200/50">
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                     Cliente
                   </th>
@@ -304,7 +304,7 @@ export default function FinancialPage() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-700/30">
+              <tbody className="divide-y divide-gray-200/30">
                 {loading ? (
                   <tr>
                     <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
@@ -319,17 +319,17 @@ export default function FinancialPage() {
                   </tr>
                 ) : (
                   receivables.map((rec) => (
-                    <tr key={rec.id} className="hover:bg-gray-700/20 transition-colors">
-                      <td className="px-6 py-4 text-gray-200">
+                    <tr key={rec.id} className="hover:bg-gray-200/20 transition-colors">
+                      <td className="px-6 py-4 text-gray-800">
                         {rec.client?.name ?? "—"}
                       </td>
-                      <td className="px-6 py-4 text-right font-medium text-white">
+                      <td className="px-6 py-4 text-right font-medium text-gray-900">
                         {formatCurrency(parseFloat(rec.value))}
                       </td>
-                      <td className="px-6 py-4 text-center text-gray-400 capitalize">
+                      <td className="px-6 py-4 text-center text-gray-500 capitalize">
                         {formatMonth(rec.referenceMonth)}
                       </td>
-                      <td className="px-6 py-4 text-center text-gray-400">
+                      <td className="px-6 py-4 text-center text-gray-500">
                         {formatDate(rec.dueDate)}
                       </td>
                       <td className="px-6 py-4 text-center">
@@ -355,13 +355,13 @@ export default function FinancialPage() {
                               setEditingReceivable(rec)
                               setReceivableFormOpen(true)
                             }}
-                            className="rounded p-1 text-gray-400 hover:text-white transition-colors"
+                            className="rounded p-1 text-gray-500 hover:text-gray-900 transition-colors"
                           >
                             <Pencil className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => deleteReceivable(rec.id)}
-                            className="rounded p-1 text-gray-400 hover:text-red-400 transition-colors"
+                            className="rounded p-1 text-gray-500 hover:text-red-400 transition-colors"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -373,18 +373,18 @@ export default function FinancialPage() {
               </tbody>
               {receivables.length > 0 && (
                 <tfoot>
-                  <tr className="border-t border-gray-700/50 bg-gray-900/30">
-                    <td className="px-6 py-3 text-sm font-semibold text-gray-300">Total</td>
+                  <tr className="border-t border-gray-200/50 bg-white/30">
+                    <td className="px-6 py-3 text-sm font-semibold text-gray-600">Total</td>
                     <td colSpan={5} />
                   </tr>
-                  <tr className="bg-gray-900/20">
+                  <tr className="bg-white/20">
                     <td className="px-6 py-2 text-xs text-gray-500">Pago</td>
                     <td className="px-6 py-2 text-right text-sm font-bold text-emerald-400">
                       {formatCurrency(totalPaid)}
                     </td>
                     <td colSpan={4} />
                   </tr>
-                  <tr className="bg-gray-900/20">
+                  <tr className="bg-white/20">
                     <td className="px-6 py-2 text-xs text-gray-500">Pendente</td>
                     <td className="px-6 py-2 text-right text-sm font-bold text-yellow-400">
                       {formatCurrency(totalPending)}
