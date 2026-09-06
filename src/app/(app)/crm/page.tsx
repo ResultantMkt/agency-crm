@@ -33,5 +33,5 @@ export default async function CrmPage() {
   const users: User[] = JSON.parse(JSON.stringify(rawUsers))
   const stages: PipelineStage[] = JSON.parse(JSON.stringify(rawStages))
 
-  return <KanbanBoard initialLeads={leads} users={users} stages={stages} />
+  return <KanbanBoard initialLeads={leads} users={users} stages={stages} isAdmin={session.user.role === "ADMIN"} />
 }

@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useCallback, useMemo } from "react"
+import { useState, useCallback, useMemo, useRef, useEffect } from "react"
 import { DndContext, DragEndEvent, DragStartEvent, DragOverlay, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
 import { arrayMove } from "@dnd-kit/sortable"
-import { Plus, Upload, Search } from "lucide-react"
+import { Plus, Upload, Search, Check, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { KanbanColumn } from "./kanban-column"
 import { LeadCardOverlay } from "./lead-card"
@@ -16,17 +16,28 @@ interface KanbanBoardProps {
   initialLeads: Lead[]
   users: User[]
   stages: PipelineStage[]
+  isAdmin?: boolean
 }
 
-export function KanbanBoard({ initialLeads, users, stages }: KanbanBoardProps) {
+export function KanbanBoard({ initialLeads, users, stages: initialStages, isAdmin }: KanbanBoardProps) {
   const [leads, setLeads] = useState<Lead[]>(initialLeads)
+  const [stages, setStages] = useState<PipelineStage[]>(initialStages)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [formOpen, setFormOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
   const [filters, setFilters] = useState<KanbanFilterState>(EMPTY_FILTERS)
   const [search, setSearch] = useState("")
+  const [stageError, setStageError] = useState<string | null>(null)
+  const [addingStage, setAddingStage] = useState(false)
+  const [newStageName, setNewStageName] = useState("")
+  const [addingLoading, setAddingLoading] = useState(false)
+  const newStageInputRef = useRef<HTMLInputElement>(null)
 
-  const stageKeySet = useMemo(() => new Set(stages.map(s => s.key)), [stages])
+  useEffect(() => {
+    if (addingStage) newStageInputRef.current?.focus()
+  }, [addingStage])
+
+  const stageKeySet = useMemo(() => new Set(stages.map((s) => s.key)), [stages])
 
   const filteredLeads = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -41,8 +52,7 @@ export function KanbanBoard({ initialLeads, users, stages }: KanbanBoardProps) {
         if (!matchesUnassigned && !matchesUser) return false
       }
       if (filters.createdFrom) {
-        const from = new Date(filters.createdFrom)
-        if (new Date(l.createdAt) < from) return false
+        if (new Date(l.createdAt) < new Date(filters.createdFrom)) return false
       }
       if (filters.createdTo) {
         const to = new Date(filters.createdTo)
@@ -54,9 +64,7 @@ export function KanbanBoard({ initialLeads, users, stages }: KanbanBoardProps) {
   }, [leads, filters, search])
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 8 },
-    })
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   )
 
   const getLeadsForStage = useCallback(
@@ -81,16 +89,12 @@ export function KanbanBoard({ initialLeads, users, stages }: KanbanBoardProps) {
     if (!activeLead) return
 
     const overId = over.id as string
-
-    // Determine target stage and whether we're hovering over a specific card
     let targetStage: string
     let overLeadId: string | null = null
 
     if (stageKeySet.has(overId)) {
-      // Dropped on the column's droppable area
       targetStage = overId
     } else {
-      // Dropped on another lead card
       const overLead = leads.find((l) => l.id === overId)
       if (!overLead) return
       targetStage = overLead.stage as string
@@ -98,52 +102,106 @@ export function KanbanBoard({ initialLeads, users, stages }: KanbanBoardProps) {
     }
 
     if (activeLead.stage === targetStage) {
-      // Intra-column reorder
       if (!overLeadId || overLeadId === activeLeadId) return
-
       const columnLeads = leads
         .filter((l) => l.stage === targetStage)
         .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
-
       const activeIndex = columnLeads.findIndex((l) => l.id === activeLeadId)
       const overIndex = columnLeads.findIndex((l) => l.id === overLeadId)
       if (activeIndex === overIndex) return
-
       const reordered = arrayMove(columnLeads, activeIndex, overIndex)
       const updates = reordered.map((l, i) => ({ id: l.id, position: i }))
-
       const posMap = new Map(updates.map((u) => [u.id, u.position]))
       setLeads((prev) =>
         prev.map((l) => (posMap.has(l.id) ? { ...l, position: posMap.get(l.id)! } : l))
       )
-
       fetch("/api/leads/reorder", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ updates }),
       })
     } else {
-      // Inter-column move
       const previousLeads = leads
-
       setLeads((prev) =>
         prev.map((l) =>
           l.id === activeLeadId ? { ...l, stage: targetStage, updatedAt: new Date().toISOString() } : l
         )
       )
-
       try {
         const res = await fetch(`/api/leads/${activeLeadId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ stage: targetStage }),
         })
-        if (!res.ok) throw new Error("Falha ao atualizar estágio")
+        if (!res.ok) throw new Error()
       } catch {
         setLeads(previousLeads)
       }
     }
   }
+
+  // ─── Stage management (admin) ────────────────────────────────────────────────
+
+  async function handleRenameStage(stageId: string, name: string) {
+    const res = await fetch(`/api/pipeline-stages/${stageId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    })
+    if (res.ok) {
+      const updated = await res.json()
+      setStages((prev) => prev.map((s) => (s.id === stageId ? updated : s)))
+    }
+  }
+
+  async function handleDeleteStage(stageId: string) {
+    setStageError(null)
+    const res = await fetch(`/api/pipeline-stages/${stageId}`, { method: "DELETE" })
+    const data = await res.json()
+    if (!res.ok) {
+      setStageError(data.error ?? "Erro ao excluir etapa")
+      setTimeout(() => setStageError(null), 5000)
+      return
+    }
+    setStages((prev) => prev.filter((s) => s.id !== stageId))
+  }
+
+  async function handleMoveStage(index: number, direction: "left" | "right") {
+    const swapIndex = direction === "left" ? index - 1 : index + 1
+    if (swapIndex < 0 || swapIndex >= stages.length) return
+    const newStages = [...stages]
+    ;[newStages[index], newStages[swapIndex]] = [newStages[swapIndex], newStages[index]]
+    const reordered = newStages.map((s, i) => ({ ...s, position: i }))
+    setStages(reordered)
+    fetch("/api/pipeline-stages/reorder", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ stages: reordered.map(({ id, position }) => ({ id, position })) }),
+    })
+  }
+
+  async function handleAddStage() {
+    const name = newStageName.trim()
+    if (!name) return
+    setAddingLoading(true)
+    try {
+      const res = await fetch("/api/pipeline-stages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      })
+      if (res.ok) {
+        const created = await res.json()
+        setStages((prev) => [...prev, created])
+        setNewStageName("")
+        setAddingStage(false)
+      }
+    } finally {
+      setAddingLoading(false)
+    }
+  }
+
+  // ─── Lead handlers ───────────────────────────────────────────────────────────
 
   function handleLeadCreated(lead: Lead) {
     setLeads((prev) => [lead, ...prev])
@@ -187,32 +245,92 @@ export function KanbanBoard({ initialLeads, users, stages }: KanbanBoardProps) {
         </Button>
       </div>
 
+      {/* Stage error banner */}
+      {stageError && (
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700">
+          {stageError}
+        </div>
+      )}
+
       {/* Kanban */}
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-        <div className="flex gap-4 overflow-x-auto pb-4 flex-1">
-          {stages.map((s) => (
+        <div className="flex gap-4 overflow-x-auto pb-4 flex-1 items-start">
+          {stages.map((s, index) => (
             <KanbanColumn
               key={s.key}
               stage={s.key}
               label={s.name}
               leads={getLeadsForStage(s.key)}
               users={users}
+              isAdmin={isAdmin}
+              isFirst={index === 0}
+              isLast={index === stages.length - 1}
+              onRename={(name) => handleRenameStage(s.id, name)}
+              onDelete={() => handleDeleteStage(s.id)}
+              onMoveLeft={() => handleMoveStage(index, "left")}
+              onMoveRight={() => handleMoveStage(index, "right")}
               onDeleteLead={handleLeadDeleted}
               onUpdateLead={handleLeadUpdated}
             />
           ))}
+
+          {/* Add stage (admin only) */}
+          {isAdmin && (
+            <div className="shrink-0" style={{ minWidth: 200 }}>
+              {addingStage ? (
+                <div className="flex flex-col gap-2 px-3 py-2 rounded-lg border border-dashed border-purple-300 bg-purple-50/50">
+                  <input
+                    ref={newStageInputRef}
+                    value={newStageName}
+                    onChange={(e) => setNewStageName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleAddStage()
+                      if (e.key === "Escape") { setAddingStage(false); setNewStageName("") }
+                    }}
+                    placeholder="Nome da etapa..."
+                    className="text-sm bg-white border border-gray-300 rounded px-2 py-1.5 text-gray-900 focus:outline-none focus:ring-1 focus:ring-purple-500 placeholder:text-gray-400"
+                    disabled={addingLoading}
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleAddStage}
+                      disabled={addingLoading || !newStageName.trim()}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium bg-purple-600 text-white hover:bg-purple-500 disabled:opacity-40 transition-colors"
+                    >
+                      <Check className="h-3 w-3" />
+                      Criar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setAddingStage(false); setNewStageName("") }}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium text-gray-500 hover:bg-gray-100 transition-colors"
+                    >
+                      <X className="h-3 w-3" />
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setAddingStage(true)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-gray-300 text-gray-500 hover:border-purple-400 hover:text-purple-600 hover:bg-purple-50/50 text-sm font-medium transition-colors w-full"
+                >
+                  <Plus className="h-4 w-4" />
+                  Nova etapa
+                </button>
+              )}
+            </div>
+          )}
         </div>
         <DragOverlay dropAnimation={{ duration: 180, easing: "ease" }}>
           {activeId ? (
-            <LeadCardOverlay
-              lead={leads.find((l) => l.id === activeId)!}
-              users={users}
-            />
+            <LeadCardOverlay lead={leads.find((l) => l.id === activeId)!} users={users} />
           ) : null}
         </DragOverlay>
       </DndContext>
 
-      {/* Dialog de criação */}
       <LeadForm
         open={formOpen}
         onClose={() => setFormOpen(false)}
@@ -220,8 +338,6 @@ export function KanbanBoard({ initialLeads, users, stages }: KanbanBoardProps) {
         users={users}
         stages={stages}
       />
-
-      {/* Dialog de importação CSV */}
       <CsvImportModal
         open={importOpen}
         onClose={() => setImportOpen(false)}
