@@ -150,7 +150,7 @@ function MonthGrid({
                 className={[
                   "flex h-7 w-7 items-center justify-center rounded-full text-xs transition-colors",
                   disabled ? "cursor-not-allowed text-gray-600" : "",
-                  (isStart || isEnd) ? "bg-purple-600 font-semibold text-gray-900" : "",
+                  (isStart || isEnd) ? "bg-purple-600 font-semibold text-white" : "",
                   !disabled && !isStart && !isEnd ? "text-gray-600 hover:bg-gray-200 hover:text-gray-900" : "",
                 ].join(" ")}
               >

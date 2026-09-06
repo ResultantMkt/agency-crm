@@ -235,9 +235,9 @@ export default async function DashboardPage() {
 
       {/* Alerta de tarefas atrasadas */}
       {overdueTasksCount > 0 && (
-        <div className="flex items-center gap-3 rounded-lg border border-yellow-700/50 bg-yellow-900/20 px-4 py-3">
-          <AlertTriangle className="h-4 w-4 shrink-0 text-yellow-400" />
-          <p className="text-sm text-yellow-300">
+        <div className="flex items-center gap-3 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3">
+          <AlertTriangle className="h-4 w-4 shrink-0 text-yellow-600" />
+          <p className="text-sm text-yellow-800">
             Você tem{" "}
             <span className="font-semibold">
               {overdueTasksCount} tarefa{overdueTasksCount !== 1 ? "s" : ""}

@@ -91,7 +91,7 @@ export default function TasksPage() {
       <div
         className={`rounded-lg border p-4 transition-colors ${
           isOverdue
-            ? "bg-red-900/20 border-red-700/50"
+            ? "bg-red-50 border-red-200"
             : "bg-gray-100/30 border-gray-200/30 hover:bg-white"
         }`}
       >
@@ -115,7 +115,7 @@ export default function TasksPage() {
                 <span>Responsável: {task.assignedTo.name}</span>
               )}
               {task.dueDate && (
-                <span className={isOverdue ? "text-red-400" : ""}>
+                <span className={isOverdue ? "text-red-600" : ""}>
                   Prazo: {formatDate(task.dueDate)}
                 </span>
               )}
@@ -134,7 +134,7 @@ export default function TasksPage() {
             {task.status === "PENDING" && (
               <button
                 onClick={() => completeTask(task.id)}
-                className="flex items-center gap-1 rounded px-2 py-1 text-xs text-emerald-400 hover:text-emerald-300 hover:bg-emerald-900/20 transition-colors"
+                className="flex items-center gap-1 rounded px-2 py-1 text-xs text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 transition-colors"
               >
                 <CheckCircle className="h-3.5 w-3.5" />
                 Concluir
@@ -151,7 +151,7 @@ export default function TasksPage() {
             </button>
             <button
               onClick={() => deleteTask(task.id)}
-              className="rounded p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-900/20 transition-colors"
+              className="rounded p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors"
             >
               <Trash2 className="h-3.5 w-3.5" />
             </button>
@@ -207,7 +207,7 @@ export default function TasksPage() {
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                       group.isOverdue
-                        ? "bg-red-900/30 text-red-400"
+                        ? "bg-red-100 text-red-600"
                         : "bg-gray-100 text-gray-500"
                     }`}
                   >

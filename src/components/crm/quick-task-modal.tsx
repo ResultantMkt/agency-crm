@@ -102,7 +102,7 @@ export function QuickTaskModal({ open, onClose, onSuccess, leadId, users }: Quic
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <p className="rounded-lg bg-red-900/30 border border-red-700/50 px-3 py-2 text-sm text-red-400">
+            <p className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
               {error}
             </p>
           )}

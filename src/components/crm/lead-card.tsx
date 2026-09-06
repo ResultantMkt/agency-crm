@@ -293,22 +293,22 @@ export function LeadCard({ lead, users = [], onDelete, onUpdate }: LeadCardProps
           <div
             className={
               urgentTask.urgency === "overdue"
-                ? "flex items-center gap-1.5 mb-3 px-2 py-1 rounded bg-red-500/15 border border-red-500/30"
-                : "flex items-center gap-1.5 mb-3 px-2 py-1 rounded bg-yellow-500/15 border border-yellow-500/30"
+                ? "flex items-center gap-1.5 mb-3 px-2 py-1 rounded bg-red-50 border border-red-200"
+                : "flex items-center gap-1.5 mb-3 px-2 py-1 rounded bg-yellow-50 border border-yellow-200"
             }
           >
             <ClipboardList
               className={
                 urgentTask.urgency === "overdue"
-                  ? "h-3 w-3 text-red-400 shrink-0"
-                  : "h-3 w-3 text-yellow-400 shrink-0"
+                  ? "h-3 w-3 text-red-500 shrink-0"
+                  : "h-3 w-3 text-yellow-600 shrink-0"
               }
             />
             <span
               className={
                 urgentTask.urgency === "overdue"
-                  ? "text-xs text-red-300 truncate"
-                  : "text-xs text-yellow-300 truncate"
+                  ? "text-xs text-red-600 truncate"
+                  : "text-xs text-yellow-700 truncate"
               }
             >
               {urgentTask.title}
@@ -344,7 +344,7 @@ export function LeadCard({ lead, users = [], onDelete, onUpdate }: LeadCardProps
                 onClick={() => setEditingField("assignedTo")}
                 title="Clique para editar responsável"
               >
-                <div className="h-6 w-6 rounded-full bg-purple-600 flex items-center justify-center text-xs font-semibold text-gray-900 shrink-0 group-hover:ring-1 group-hover:ring-blue-400 transition-all">
+                <div className="h-6 w-6 rounded-full bg-purple-600 flex items-center justify-center text-xs font-semibold text-white shrink-0 group-hover:ring-1 group-hover:ring-purple-400 transition-all">
                   {getInitials(displayAssignedName)}
                 </div>
                 <span className="text-xs text-gray-500 truncate max-w-[80px] group-hover:text-purple-600 transition-colors">
