@@ -54,7 +54,7 @@ function MiniAvatar({ name, photoUrl }: { name: string; photoUrl?: string | null
     )
   }
   return (
-    <div className={`h-7 w-7 rounded-full flex items-center justify-center shrink-0 self-end mb-1 text-gray-900 text-[10px] font-bold ${avatarColor(name)}`}>
+    <div className={`h-7 w-7 rounded-full flex items-center justify-center shrink-0 self-end mb-1 text-white text-[10px] font-bold ${avatarColor(name)}`}>
       {getInitials(name) || "?"}
     </div>
   )
@@ -125,7 +125,7 @@ function MediaContent({ message, isOutbound }: { message: Message; isOutbound: b
         href={src ?? "#"}
         target="_blank"
         rel="noopener noreferrer"
-        className={`flex items-center gap-2 mb-1 px-2 py-1.5 rounded-lg ${isOutbound ? "bg-purple-500/40" : "bg-gray-600/40"} hover:opacity-80 transition-opacity`}
+        className={`flex items-center gap-2 mb-1 px-2 py-1.5 rounded-lg ${isOutbound ? "bg-purple-500/40" : "bg-gray-400/30"} hover:opacity-80 transition-opacity`}
       >
         <FileText className="h-5 w-5 shrink-0" />
         <span className="text-xs truncate max-w-[140px]">{name}</span>
@@ -203,15 +203,11 @@ export function MessageBubble({ message, isPinned, highlight, onPin, contactName
 
         {/* Bubble */}
         <div className="flex flex-col">
-          {/* Outbound sender name */}
-          {isOutbound && message.senderName && (
-            <p className="text-[10px] text-gray-500 text-right mb-0.5 pr-1">{message.senderName}</p>
-          )}
 
           <div
             className={`rounded-2xl px-3 py-2 ${
               isOutbound
-                ? "rounded-br-sm bg-purple-600 text-gray-900"
+                ? "rounded-br-sm bg-purple-600 text-white"
                 : "rounded-bl-sm bg-gray-200 text-gray-900"
             } ${isPinned ? "ring-2 ring-yellow-400/50" : ""}`}
           >
@@ -243,7 +239,7 @@ export function MessageBubble({ message, isPinned, highlight, onPin, contactName
               </p>
             )}
 
-            <p className={`mt-1 text-right text-[10px] ${isOutbound ? "text-blue-200" : "text-gray-500"}`}>
+            <p className={`mt-1 text-right text-[10px] ${isOutbound ? "text-purple-200" : "text-gray-500"}`}>
               {formatTime(message.sentAt)}
             </p>
           </div>
