@@ -19,7 +19,23 @@
       "Bash(echo \"LOG_PID=$!\")",
       "Bash(git commit *)",
       "Bash(node -e ' *)",
-      "Bash(node *)"
+      "Bash(node *)",
+      "Bash(cp -r /c/Users/Samsung/agency-crm/prisma/migrations/20260913143310_add_client_niche /c/Users/Samsung/agency-crm/.claude/worktrees/agent-a2941c86/prisma/migrations/)",
+      "Bash(cp -r /c/Users/Samsung/agency-crm/prisma/migrations/20260913144504_add_client_logo /c/Users/Samsung/agency-crm/.claude/worktrees/agent-a2941c86/prisma/migrations/)",
+      "Bash(mkdir -p /c/Users/Samsung/agency-crm/.claude/worktrees/agent-a2941c86/src/app/api/clients/\\\\[id\\\\]/project-links/\\\\[linkId\\\\])",
+      "Bash(mkdir -p /c/Users/Samsung/agency-crm/.claude/worktrees/agent-a2941c86/src/app/api/clients/\\\\[id\\\\]/kanban-cards/\\\\[cardId\\\\])",
+      "Bash(mkdir -p /c/Users/Samsung/agency-crm/.claude/worktrees/agent-a2941c86/src/app/api/clients/\\\\[id\\\\]/meeting-notes)",
+      "Bash(mkdir -p \"/c/Users/Samsung/agency-crm/.claude/worktrees/agent-a2941c86/src/app/\\(app\\)/clients/[clientId]/sobre-o-projeto\")",
+      "Bash(mkdir -p \"/c/Users/Samsung/agency-crm/.claude/worktrees/agent-a2941c86/src/app/\\(app\\)/clients/[clientId]/kanban-de-atividades\")",
+      "Bash(mkdir -p \"/c/Users/Samsung/agency-crm/.claude/worktrees/agent-a2941c86/src/app/\\(app\\)/clients/[clientId]/atas-de-reuniao\")",
+      "Bash(mkdir -p \"src/app/api/clients/[id]/project-links/[linkId]\" \"src/app/api/clients/[id]/kanban-cards/[cardId]\" \"src/app/api/clients/[id]/meeting-notes\")",
+      "Bash(cp \".claude/worktrees/agent-a2941c86/src/app/api/clients/[id]/project-links/route.ts\" \"src/app/api/clients/[id]/project-links/route.ts\")",
+      "Bash(cp \".claude/worktrees/agent-a2941c86/src/app/api/clients/[id]/project-links/[linkId]/route.ts\" \"src/app/api/clients/[id]/project-links/[linkId]/route.ts\")",
+      "Bash(cp \".claude/worktrees/agent-a2941c86/src/app/api/clients/[id]/kanban-cards/route.ts\" \"src/app/api/clients/[id]/kanban-cards/route.ts\")",
+      "Bash(cp \".claude/worktrees/agent-a2941c86/src/app/api/clients/[id]/kanban-cards/[cardId]/route.ts\" \"src/app/api/clients/[id]/kanban-cards/[cardId]/route.ts\")",
+      "Bash(cp \".claude/worktrees/agent-a2941c86/src/app/\\(app\\)/clients/[clientId]/sobre-o-projeto/page.tsx\" \"src/app/\\(app\\)/clients/[clientId]/sobre-o-projeto/page.tsx\")",
+      "Bash(cp \".claude/worktrees/agent-a2941c86/src/app/\\(app\\)/clients/[clientId]/kanban-de-atividades/page.tsx\" \"src/app/\\(app\\)/clients/[clientId]/kanban-de-atividades/page.tsx\")",
+      "Bash(cp \".claude/worktrees/agent-a2941c86/src/app/\\(app\\)/clients/[clientId]/atas-de-reuniao/page.tsx\" \"src/app/\\(app\\)/clients/[clientId]/atas-de-reuniao/page.tsx\")"
     ]
   }
 }

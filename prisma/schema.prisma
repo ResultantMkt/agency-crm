@@ -86,8 +86,46 @@ model Client {
   receivables   Receivable[]
   tasks         Task[]         @relation("ClientTasks")
   conversations Conversation[]
+  projectLinks  ClientProjectLink[] @relation("ClientProjectLinks")
+  kanbanCards   ClientKanbanCard[]  @relation("ClientKanbanCards")
+  meetingNotes  ClientMeetingNotes? @relation("ClientMeetingNotes")
 
   @@index([status])
+}
+
+model ClientProjectLink {
+  id        String   @id @default(cuid())
+  clientId  String
+  section   String
+  label     String?
+  url       String   @db.Text
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  client    Client   @relation("ClientProjectLinks", fields: [clientId], references: [id], onDelete: Cascade)
+  @@index([clientId])
+}
+
+model ClientKanbanCard {
+  id        String    @id @default(cuid())
+  clientId  String
+  columnKey String
+  title     String
+  assignee  String?
+  dueDate   DateTime?
+  position  Int       @default(0)
+  content   Json      @default("[]")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  client    Client    @relation("ClientKanbanCards", fields: [clientId], references: [id], onDelete: Cascade)
+  @@index([clientId])
+}
+
+model ClientMeetingNotes {
+  id        String   @id @default(cuid())
+  clientId  String   @unique
+  content   Json     @default("[]")
+  updatedAt DateTime @updatedAt
+  client    Client   @relation("ClientMeetingNotes", fields: [clientId], references: [id], onDelete: Cascade)
 }
 
 model PipelineStage {

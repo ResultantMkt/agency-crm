@@ -83,6 +83,29 @@ export interface Task {
   client?: { name: string } | null
 }
 
+export interface ClientProjectLink {
+  id: string
+  clientId: string
+  section: string
+  label?: string | null
+  url: string
+  position: number
+  createdAt: string
+}
+
+export interface ClientKanbanCard {
+  id: string
+  clientId: string
+  columnKey: string
+  title: string
+  assignee?: string | null
+  dueDate?: string | null
+  position: number
+  content: unknown[]
+  createdAt: string
+  updatedAt: string
+}
+
 export interface Receivable {
   id: string
   clientId: string
