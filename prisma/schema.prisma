@@ -71,6 +71,7 @@ model User {
 model Client {
   id            String       @id @default(cuid())
   name          String
+  niche         String?
   contractValue Decimal      @db.Decimal(10, 2)
   billingType   BillingType  @default(MONTHLY)
   startDate     DateTime

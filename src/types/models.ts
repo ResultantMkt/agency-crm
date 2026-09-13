@@ -54,6 +54,7 @@ export interface LeadHistory {
 export interface Client {
   id: string
   name: string
+  niche?: string | null
   contractValue: string
   billingType: "MONTHLY" | "OTHER"
   startDate: string

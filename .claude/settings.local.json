@@ -18,7 +18,8 @@
       "Bash(openssl rand *)",
       "Bash(echo \"LOG_PID=$!\")",
       "Bash(git commit *)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(node *)"
     ]
   }
 }

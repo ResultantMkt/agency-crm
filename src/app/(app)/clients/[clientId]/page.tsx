@@ -6,27 +6,53 @@ import {
   Calendar,
   DollarSign,
   Clock,
-  CheckCircle2,
-  Circle,
-  RefreshCw,
+  Tag,
+  FileText,
+  Kanban,
+  BookOpen,
+  Link2,
 } from "lucide-react"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { Badge } from "@/components/ui/badge"
 import { ClientStatusBadge } from "@/components/clients/client-status-badge"
-import { formatCurrency, formatDate, formatMonth, getStartOfMonth, getEndOfMonth, cn } from "@/lib/utils"
-import type { Client, Task, Receivable, ReceivableStatus } from "@/types/models"
+import { formatCurrency, formatDate } from "@/lib/utils"
+import type { Client } from "@/types/models"
 
 export const metadata: Metadata = {
   title: "Detalhe do Cliente — Agency CRM",
 }
 
-const RECEIVABLE_CONFIG: Record<
-  ReceivableStatus,
-  { label: string; variant: "success" | "warning" }
-> = {
-  PAID: { label: "Pago", variant: "success" },
-  PENDING: { label: "Pendente", variant: "warning" },
+const SUBPAGES = [
+  {
+    slug: "sobre-o-projeto",
+    label: "Sobre o Projeto",
+    icon: FileText,
+    description: "Briefing, objetivos e contexto do projeto",
+  },
+  {
+    slug: "kanban-de-atividades",
+    label: "Kanban de Atividades",
+    icon: Kanban,
+    description: "Quadro de tarefas e fluxo de trabalho",
+  },
+  {
+    slug: "atas-de-reuniao",
+    label: "Atas de Reunião",
+    icon: BookOpen,
+    description: "Registro das reuniões e decisões",
+  },
+  {
+    slug: "acessos-e-links",
+    label: "Acessos e Links",
+    icon: Link2,
+    description: "Credenciais, ferramentas e links úteis",
+  },
+]
+
+const DURATION_LABELS: Record<number, string> = {
+  3: "3 meses",
+  6: "6 meses",
+  12: "1 ano",
 }
 
 export default async function ClientDetailPage({
@@ -39,44 +65,16 @@ export default async function ClientDetailPage({
 
   const { clientId } = await params
 
-  const now = new Date()
-  const startOfMonth = getStartOfMonth(now)
-  const endOfMonth = getEndOfMonth(now)
-
   const rawClient = await prisma.client.findUnique({
     where: { id: clientId },
-    include: {
-      receivables: {
-        where: {
-          referenceMonth: { gte: startOfMonth, lte: endOfMonth },
-        },
-        orderBy: { dueDate: "asc" },
-      },
-      tasks: {
-        include: { assignedTo: { select: { name: true } } },
-        orderBy: { createdAt: "desc" },
-      },
-    },
   })
 
   if (!rawClient) notFound()
 
-  const client: Client & { receivables: Receivable[]; tasks: Task[] } = JSON.parse(
-    JSON.stringify(rawClient)
-  )
-
-  const BILLING_LABELS = { MONTHLY: "Mensal", OTHER: "Outro" }
-
-  const totalReceivables = client.receivables.reduce(
-    (sum, r) => sum + parseFloat(r.value),
-    0
-  )
-  const paidReceivables = client.receivables
-    .filter((r) => r.status === "PAID")
-    .reduce((sum, r) => sum + parseFloat(r.value), 0)
+  const client: Client = JSON.parse(JSON.stringify(rawClient))
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-8 max-w-4xl">
       {/* Back */}
       <Link
         href="/clients"
@@ -90,24 +88,22 @@ export default async function ClientDetailPage({
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">{client.name}</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Desde {formatDate(client.startDate)}
-          </p>
+          {client.niche && (
+            <p className="text-sm text-gray-500 mt-1 flex items-center gap-1.5">
+              <Tag className="h-3.5 w-3.5" />
+              {client.niche}
+            </p>
+          )}
         </div>
         <ClientStatusBadge status={client.status} />
       </div>
 
-      {/* Info do contrato */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Dados do contrato */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <InfoCard
           icon={<DollarSign className="h-4 w-4" />}
           label="Valor do contrato"
           value={formatCurrency(parseFloat(client.contractValue))}
-        />
-        <InfoCard
-          icon={<RefreshCw className="h-4 w-4" />}
-          label="Tipo de cobrança"
-          value={BILLING_LABELS[client.billingType]}
         />
         <InfoCard
           icon={<Calendar className="h-4 w-4" />}
@@ -117,137 +113,40 @@ export default async function ClientDetailPage({
         {client.endDate ? (
           <InfoCard
             icon={<Calendar className="h-4 w-4" />}
-            label="Vencimento"
+            label="Término do contrato"
             value={formatDate(client.endDate)}
           />
         ) : client.duration ? (
           <InfoCard
             icon={<Clock className="h-4 w-4" />}
             label="Duração"
-            value={`${client.duration} ${client.duration === 1 ? "mês" : "meses"}`}
+            value={DURATION_LABELS[client.duration] ?? `${client.duration} meses`}
           />
         ) : null}
       </div>
 
-      {/* Notas */}
-      {client.notes && (
-        <div className="bg-gray-100/60 border border-gray-200/50 rounded-lg px-4 py-4">
-          <p className="text-xs font-semibold text-gray-500 mb-1.5">Notas</p>
-          <p className="text-sm text-gray-600 whitespace-pre-wrap">{client.notes}</p>
-        </div>
-      )}
-
-      {/* Recebíveis do mês atual */}
+      {/* Subpáginas */}
       <section>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-base font-semibold text-gray-900">
-            Recebíveis — {formatMonth(now)}
-          </h3>
-          {client.receivables.length > 0 && (
-            <div className="text-sm text-gray-500">
-              <span className="text-emerald-400 font-medium">{formatCurrency(paidReceivables)}</span>
-              {" "}de{" "}
-              <span className="font-medium text-gray-900">{formatCurrency(totalReceivables)}</span>
-              {" "}recebido
-            </div>
-          )}
-        </div>
-
-        {client.receivables.length === 0 ? (
-          <p className="text-sm text-gray-500">Nenhum recebível registrado para este mês.</p>
-        ) : (
-          <div className="rounded-lg border border-gray-200/50 overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200/50 bg-gray-100/80">
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Vencimento
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Valor
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200/30">
-                {client.receivables.map((r) => {
-                  const config = RECEIVABLE_CONFIG[r.status]
-                  return (
-                    <tr
-                      key={r.id}
-                      className="bg-gray-100/30 hover:bg-gray-100/60 transition-colors"
-                    >
-                      <td className="px-4 py-3 text-gray-600">{formatDate(r.dueDate)}</td>
-                      <td className="px-4 py-3 font-medium text-gray-900">
-                        {formatCurrency(parseFloat(r.value))}
-                      </td>
-                      <td className="px-4 py-3">
-                        <Badge variant={config.variant}>{config.label}</Badge>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-
-      {/* Tarefas vinculadas */}
-      <section>
-        <h3 className="text-base font-semibold text-gray-900 mb-3">
-          Tarefas ({client.tasks.length})
+        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+          Páginas do cliente
         </h3>
-        {client.tasks.length === 0 ? (
-          <p className="text-sm text-gray-500">Nenhuma tarefa vinculada a este cliente.</p>
-        ) : (
-          <ul className="space-y-2">
-            {client.tasks.map((task) => (
-              <li
-                key={task.id}
-                className="flex items-start gap-3 bg-gray-100/60 border border-gray-200/50 rounded-lg px-4 py-3"
-              >
-                {task.status === "DONE" ? (
-                  <CheckCircle2 className="h-4 w-4 text-emerald-400 mt-0.5 shrink-0" />
-                ) : (
-                  <Circle className="h-4 w-4 text-gray-500 mt-0.5 shrink-0" />
-                )}
-                <div className="flex-1 min-w-0">
-                  <p
-                    className={cn(
-                      "text-sm font-medium",
-                      task.status === "DONE" ? "text-gray-500 line-through" : "text-gray-900"
-                    )}
-                  >
-                    {task.title}
-                  </p>
-                  {task.description && (
-                    <p className="text-xs text-gray-500 mt-0.5 truncate">{task.description}</p>
-                  )}
-                  <div className="flex items-center gap-3 mt-1">
-                    {task.assignedTo && (
-                      <span className="text-xs text-gray-500">{task.assignedTo.name}</span>
-                    )}
-                    {task.dueDate && (
-                      <span className="text-xs text-gray-500 flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {formatDate(task.dueDate)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <Badge
-                  variant={task.status === "DONE" ? "success" : "warning"}
-                  className="shrink-0 text-xs"
-                >
-                  {task.status === "DONE" ? "Concluída" : "Pendente"}
-                </Badge>
-              </li>
-            ))}
-          </ul>
-        )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {SUBPAGES.map(({ slug, label, icon: Icon, description }) => (
+            <Link
+              key={slug}
+              href={`/clients/${clientId}/${slug}`}
+              className="group flex items-start gap-4 rounded-lg border border-gray-200/50 bg-gray-100/40 px-4 py-4 hover:bg-gray-100/80 hover:border-gray-300/60 transition-all"
+            >
+              <div className="mt-0.5 rounded-md bg-white/80 p-2 border border-gray-200/60 group-hover:border-gray-300/60 transition-colors">
+                <Icon className="h-4 w-4 text-gray-600" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-900">{label}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{description}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
       </section>
     </div>
   )

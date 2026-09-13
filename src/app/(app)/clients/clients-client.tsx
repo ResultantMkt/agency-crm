@@ -45,8 +45,6 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
     router.refresh()
   }
 
-  const BILLING_LABELS = { MONTHLY: "Mensal", OTHER: "Outro" }
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -81,10 +79,10 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
                   Nome
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Valor do contrato
+                  Nicho
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Tipo
+                  Valor do contrato
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Início
@@ -104,11 +102,9 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
                   className="bg-gray-100/30 hover:bg-gray-100/60 transition-colors"
                 >
                   <td className="px-4 py-3 font-medium text-gray-900">{client.name}</td>
+                  <td className="px-4 py-3 text-gray-500">{client.niche ?? "—"}</td>
                   <td className="px-4 py-3 text-emerald-400 font-medium">
                     {formatCurrency(parseFloat(client.contractValue))}
-                  </td>
-                  <td className="px-4 py-3 text-gray-500">
-                    {BILLING_LABELS[client.billingType]}
                   </td>
                   <td className="px-4 py-3 text-gray-500">{formatDate(client.startDate)}</td>
                   <td className="px-4 py-3">
