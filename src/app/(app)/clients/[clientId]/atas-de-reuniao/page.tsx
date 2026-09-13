@@ -2,26 +2,13 @@ import type { Metadata } from "next"
 import { notFound, redirect } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
-import dynamic from "next/dynamic"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { MeetingNotesEditor } from "@/components/clients/meeting-notes-editor"
 
 export const metadata: Metadata = {
   title: "Atas de Reunião — Agency CRM",
 }
-
-const MeetingNotesEditor = dynamic(
-  () =>
-    import("@/components/clients/meeting-notes-editor").then((m) => ({
-      default: m.MeetingNotesEditor,
-    })),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="h-64 rounded-lg border border-gray-200 bg-gray-50 animate-pulse" />
-    ),
-  }
-)
 
 export default async function AtasDeReuniaoPage({
   params,
