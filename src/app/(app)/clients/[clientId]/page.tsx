@@ -1,25 +1,12 @@
 import type { Metadata } from "next"
 import { notFound, redirect } from "next/navigation"
 import Link from "next/link"
-import {
-  ArrowLeft,
-  Calendar,
-  DollarSign,
-  Clock,
-  Tag,
-  FileText,
-  Kanban,
-  BookOpen,
-  Link2,
-} from "lucide-react"
+import { ArrowLeft, FileText, Kanban, BookOpen, Link2 } from "lucide-react"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { ClientStatusBadge } from "@/components/clients/client-status-badge"
-import { formatCurrency, formatDate } from "@/lib/utils"
-import type { Client } from "@/types/models"
 
 export const metadata: Metadata = {
-  title: "Detalhe do Cliente — Agency CRM",
+  title: "Cliente — Agency CRM",
 }
 
 const SUBPAGES = [
@@ -49,13 +36,11 @@ const SUBPAGES = [
   },
 ]
 
-const DURATION_LABELS: Record<number, string> = {
-  3: "3 meses",
-  6: "6 meses",
-  12: "1 ano",
+function getInitials(name: string): string {
+  return name.split(" ").slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("") || "?"
 }
 
-export default async function ClientDetailPage({
+export default async function ClientHubPage({
   params,
 }: {
   params: Promise<{ clientId: string }>
@@ -65,17 +50,16 @@ export default async function ClientDetailPage({
 
   const { clientId } = await params
 
-  const rawClient = await prisma.client.findUnique({
+  const client = await prisma.client.findUnique({
     where: { id: clientId },
+    select: { id: true, name: true, niche: true, logoUrl: true },
   })
 
-  if (!rawClient) notFound()
-
-  const client: Client = JSON.parse(JSON.stringify(rawClient))
+  if (!client) notFound()
 
   return (
-    <div className="space-y-8 max-w-4xl">
-      {/* Back */}
+    <div className="max-w-2xl space-y-8">
+      {/* Voltar */}
       <Link
         href="/clients"
         className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"
@@ -84,90 +68,45 @@ export default async function ClientDetailPage({
         Voltar a Clientes
       </Link>
 
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
+      {/* Logo + nome */}
+      <div className="flex flex-col items-center text-center gap-4 py-6">
+        {client.logoUrl ? (
+          <img
+            src={client.logoUrl}
+            alt={client.name}
+            className="h-24 w-24 rounded-full object-cover shadow-sm ring-2 ring-gray-100"
+          />
+        ) : (
+          <div className="h-24 w-24 rounded-full bg-purple-600 flex items-center justify-center text-white text-2xl font-bold uppercase shadow-sm ring-2 ring-gray-100">
+            {getInitials(client.name)}
+          </div>
+        )}
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">{client.name}</h2>
+          <h1 className="text-2xl font-bold text-gray-900">{client.name}</h1>
           {client.niche && (
-            <p className="text-sm text-gray-500 mt-1 flex items-center gap-1.5">
-              <Tag className="h-3.5 w-3.5" />
-              {client.niche}
-            </p>
+            <p className="text-sm text-gray-500 mt-1">{client.niche}</p>
           )}
         </div>
-        <ClientStatusBadge status={client.status} />
-      </div>
-
-      {/* Dados do contrato */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        <InfoCard
-          icon={<DollarSign className="h-4 w-4" />}
-          label="Valor do contrato"
-          value={formatCurrency(parseFloat(client.contractValue))}
-        />
-        <InfoCard
-          icon={<Calendar className="h-4 w-4" />}
-          label="Início do contrato"
-          value={formatDate(client.startDate)}
-        />
-        {client.endDate ? (
-          <InfoCard
-            icon={<Calendar className="h-4 w-4" />}
-            label="Término do contrato"
-            value={formatDate(client.endDate)}
-          />
-        ) : client.duration ? (
-          <InfoCard
-            icon={<Clock className="h-4 w-4" />}
-            label="Duração"
-            value={DURATION_LABELS[client.duration] ?? `${client.duration} meses`}
-          />
-        ) : null}
       </div>
 
       {/* Subpáginas */}
-      <section>
-        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
-          Páginas do cliente
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {SUBPAGES.map(({ slug, label, icon: Icon, description }) => (
-            <Link
-              key={slug}
-              href={`/clients/${clientId}/${slug}`}
-              className="group flex items-start gap-4 rounded-lg border border-gray-200/50 bg-gray-100/40 px-4 py-4 hover:bg-gray-100/80 hover:border-gray-300/60 transition-all"
-            >
-              <div className="mt-0.5 rounded-md bg-white/80 p-2 border border-gray-200/60 group-hover:border-gray-300/60 transition-colors">
-                <Icon className="h-4 w-4 text-gray-600" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-gray-900">{label}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{description}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
-    </div>
-  )
-}
-
-function InfoCard({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode
-  label: string
-  value: string
-}) {
-  return (
-    <div className="bg-gray-100/60 border border-gray-200/50 rounded-lg px-4 py-3">
-      <div className="flex items-center gap-2 text-gray-500 mb-1">
-        {icon}
-        <span className="text-xs">{label}</span>
+      <div className="space-y-2">
+        {SUBPAGES.map(({ slug, label, icon: Icon, description }) => (
+          <Link
+            key={slug}
+            href={`/clients/${clientId}/${slug}`}
+            className="group flex items-center gap-4 rounded-xl border border-gray-200/60 bg-white px-4 py-4 hover:border-gray-300 hover:bg-gray-50/60 transition-all"
+          >
+            <div className="shrink-0 rounded-lg bg-gray-100 p-2.5 border border-gray-200/60 group-hover:border-gray-300/60 transition-colors">
+              <Icon className="h-4 w-4 text-gray-600" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-gray-900">{label}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{description}</p>
+            </div>
+          </Link>
+        ))}
       </div>
-      <p className="text-sm font-medium text-gray-900 truncate">{value}</p>
     </div>
   )
 }

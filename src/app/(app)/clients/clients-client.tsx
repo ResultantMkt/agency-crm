@@ -96,7 +96,7 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
               <div className="relative group flex items-center gap-4 rounded-xl border border-gray-200/60 bg-white px-4 py-3.5 hover:border-gray-300 hover:bg-gray-50/60 transition-all">
                 {/* Card clicável — leva para Sobre o Projeto */}
                 <Link
-                  href={`/clients/${client.id}/sobre-o-projeto`}
+                  href={`/clients/${client.id}`}
                   className="absolute inset-0 rounded-xl"
                   aria-label={`Abrir ${client.name}`}
                 />
