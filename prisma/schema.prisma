@@ -72,6 +72,7 @@ model Client {
   id            String       @id @default(cuid())
   name          String
   niche         String?
+  logoUrl       String?  @db.Text
   contractValue Decimal      @db.Decimal(10, 2)
   billingType   BillingType  @default(MONTHLY)
   startDate     DateTime

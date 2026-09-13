@@ -50,6 +50,8 @@ export async function POST(request: NextRequest) {
     const client = await prisma.client.create({
       data: {
         name: data.name,
+        niche: data.niche,
+        logoUrl: data.logoUrl,
         contractValue: data.contractValue,
         billingType: data.billingType,
         startDate: new Date(data.startDate),

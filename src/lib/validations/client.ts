@@ -3,6 +3,7 @@ import { z } from "zod"
 export const createClientSchema = z.object({
   name: z.string().min(1),
   niche: z.string().optional().nullable(),
+  logoUrl: z.string().optional().nullable(),
   contractValue: z.number().positive(),
   billingType: z.enum(["MONTHLY", "OTHER"]).default("MONTHLY"),
   startDate: z.coerce.date(),

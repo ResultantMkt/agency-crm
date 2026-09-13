@@ -55,6 +55,7 @@ export interface Client {
   id: string
   name: string
   niche?: string | null
+  logoUrl?: string | null
   contractValue: string
   billingType: "MONTHLY" | "OTHER"
   startDate: string

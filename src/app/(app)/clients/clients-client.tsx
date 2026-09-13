@@ -2,16 +2,35 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Plus, Pencil, Eye } from "lucide-react"
 import Link from "next/link"
+import { Plus, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ClientForm } from "@/components/clients/client-form"
-import { ClientStatusBadge } from "@/components/clients/client-status-badge"
-import { formatCurrency, formatDate } from "@/lib/utils"
 import type { Client } from "@/types/models"
 
 interface ClientsClientProps {
   initialClients: Client[]
+}
+
+function getInitials(name: string): string {
+  return name.split(" ").slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("") || "?"
+}
+
+function ClientAvatar({ client }: { client: Client }) {
+  if (client.logoUrl) {
+    return (
+      <img
+        src={client.logoUrl}
+        alt={client.name}
+        className="h-11 w-11 rounded-full object-cover shrink-0"
+      />
+    )
+  }
+  return (
+    <div className="h-11 w-11 rounded-full bg-purple-600 flex items-center justify-center text-white text-sm font-bold uppercase shrink-0">
+      {getInitials(client.name)}
+    </div>
+  )
 }
 
 export function ClientsClient({ initialClients }: ClientsClientProps) {
@@ -61,7 +80,7 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
         </Button>
       </div>
 
-      {/* Tabela */}
+      {/* Lista de cards */}
       {clients.length === 0 ? (
         <div className="rounded-lg border border-dashed border-gray-200 p-12 text-center">
           <p className="text-gray-500 text-sm">Nenhum cliente cadastrado ainda.</p>
@@ -71,68 +90,39 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
           </Button>
         </div>
       ) : (
-        <div className="rounded-lg border border-gray-200/50 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-200/50 bg-gray-100/80">
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Nome
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Nicho
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Valor do contrato
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Início
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Ações
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200/30">
-              {clients.map((client) => (
-                <tr
-                  key={client.id}
-                  className="bg-gray-100/30 hover:bg-gray-100/60 transition-colors"
+        <ul className="space-y-2">
+          {clients.map((client) => (
+            <li key={client.id}>
+              <div className="relative group flex items-center gap-4 rounded-xl border border-gray-200/60 bg-white px-4 py-3.5 hover:border-gray-300 hover:bg-gray-50/60 transition-all">
+                {/* Card clicável — leva para Sobre o Projeto */}
+                <Link
+                  href={`/clients/${client.id}/sobre-o-projeto`}
+                  className="absolute inset-0 rounded-xl"
+                  aria-label={`Abrir ${client.name}`}
+                />
+
+                <ClientAvatar client={client} />
+
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-900 truncate">{client.name}</p>
+                  {client.niche && (
+                    <p className="text-xs text-gray-500 truncate mt-0.5">{client.niche}</p>
+                  )}
+                </div>
+
+                {/* Ícone de informações — abre edição */}
+                <button
+                  type="button"
+                  onClick={(e) => openEdit(client, e)}
+                  className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+                  title="Editar informações do cliente"
                 >
-                  <td className="px-4 py-3 font-medium text-gray-900">{client.name}</td>
-                  <td className="px-4 py-3 text-gray-500">{client.niche ?? "—"}</td>
-                  <td className="px-4 py-3 text-emerald-400 font-medium">
-                    {formatCurrency(parseFloat(client.contractValue))}
-                  </td>
-                  <td className="px-4 py-3 text-gray-500">{formatDate(client.startDate)}</td>
-                  <td className="px-4 py-3">
-                    <ClientStatusBadge status={client.status} />
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => openEdit(client, e)}
-                        className="h-8 w-8 p-0"
-                        title="Editar"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Link href={`/clients/${client.id}`}>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Ver detalhes">
-                          <Eye className="h-3.5 w-3.5" />
-                        </Button>
-                      </Link>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  <Info className="h-4 w-4" />
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
 
       {/* Dialog */}
