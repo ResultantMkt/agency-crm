@@ -58,54 +58,56 @@ export default async function ClientHubPage({
   if (!client) notFound()
 
   return (
-    <div className="max-w-2xl space-y-8">
-      {/* Voltar */}
-      <Link
-        href="/clients"
-        className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Voltar a Clientes
-      </Link>
+    <div className="flex justify-center">
+      <div className="w-full max-w-2xl space-y-10">
+        {/* Voltar */}
+        <Link
+          href="/clients"
+          className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Voltar a Clientes
+        </Link>
 
-      {/* Logo + nome */}
-      <div className="flex flex-col items-center text-center gap-4 py-6">
-        {client.logoUrl ? (
-          <img
-            src={client.logoUrl}
-            alt={client.name}
-            className="h-24 w-24 rounded-full object-cover shadow-sm ring-2 ring-gray-100"
-          />
-        ) : (
-          <div className="h-24 w-24 rounded-full bg-purple-600 flex items-center justify-center text-white text-2xl font-bold uppercase shadow-sm ring-2 ring-gray-100">
-            {getInitials(client.name)}
-          </div>
-        )}
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{client.name}</h1>
-          {client.niche && (
-            <p className="text-sm text-gray-500 mt-1">{client.niche}</p>
+        {/* Logo + nome */}
+        <div className="flex flex-col items-center text-center gap-4 py-4">
+          {client.logoUrl ? (
+            <img
+              src={client.logoUrl}
+              alt={client.name}
+              className="h-24 w-24 rounded-full object-cover shadow-md ring-4 ring-white"
+            />
+          ) : (
+            <div className="h-24 w-24 rounded-full bg-purple-600 flex items-center justify-center text-white text-2xl font-bold uppercase shadow-md ring-4 ring-white">
+              {getInitials(client.name)}
+            </div>
           )}
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{client.name}</h1>
+            {client.niche && (
+              <p className="text-sm text-gray-500 mt-1">{client.niche}</p>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* Subpáginas */}
-      <div className="space-y-2">
-        {SUBPAGES.map(({ slug, label, icon: Icon, description }) => (
-          <Link
-            key={slug}
-            href={`/clients/${clientId}/${slug}`}
-            className="group flex items-center gap-4 rounded-xl border border-gray-200/60 bg-white px-4 py-4 hover:border-gray-300 hover:bg-gray-50/60 transition-all"
-          >
-            <div className="shrink-0 rounded-lg bg-gray-100 p-2.5 border border-gray-200/60 group-hover:border-gray-300/60 transition-colors">
-              <Icon className="h-4 w-4 text-gray-600" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-gray-900">{label}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{description}</p>
-            </div>
-          </Link>
-        ))}
+        {/* Subpáginas — grade 2×2 */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {SUBPAGES.map(({ slug, label, icon: Icon, description }) => (
+            <Link
+              key={slug}
+              href={`/clients/${clientId}/${slug}`}
+              className="group flex items-start gap-4 rounded-xl border border-gray-200/70 bg-white px-5 py-5 shadow-sm hover:shadow-md hover:border-purple-200 hover:-translate-y-0.5 transition-all duration-150"
+            >
+              <div className="shrink-0 rounded-lg bg-purple-50 border border-purple-100 p-2.5 group-hover:bg-purple-100 transition-colors">
+                <Icon className="h-5 w-5 text-purple-600" />
+              </div>
+              <div className="min-w-0 pt-0.5">
+                <p className="text-sm font-semibold text-gray-900">{label}</p>
+                <p className="text-xs text-gray-500 mt-1 leading-relaxed">{description}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   )
