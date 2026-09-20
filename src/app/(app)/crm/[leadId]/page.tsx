@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 import type { Lead, LeadHistory, Task, User } from "@/types/models"
 import { LeadDetailClient } from "./lead-detail-client"
 import { LeadInfoClient } from "./lead-info-client"
+import { LeadNameClient } from "./lead-name-client"
 import { LeadTasksClient } from "./lead-tasks-client"
 import { LeadHistoryClient } from "./lead-history-client"
 
@@ -87,7 +88,7 @@ export default async function LeadDetailPage({
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">{lead.name}</h2>
+          <LeadNameClient leadId={lead.id} initialName={lead.name} />
           <div className="flex items-center gap-3 mt-1">
             <p className="text-sm text-gray-500">{lead.phone}</p>
             <Link
