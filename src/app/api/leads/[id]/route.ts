@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { updateLeadSchema } from "@/lib/validations/lead"
+import { normalizePhone } from "@/lib/zapi"
 import { NextRequest } from "next/server"
 
 export async function GET(
@@ -111,6 +112,15 @@ export async function DELETE(
     }
 
     await prisma.lead.delete({ where: { id } })
+
+    const phone = normalizePhone(existing.phone)
+    if (phone) {
+      await prisma.blockedContact.upsert({
+        where: { phoneNumber: phone },
+        create: { phoneNumber: phone },
+        update: { blockedAt: new Date() },
+      })
+    }
 
     return Response.json({ success: true })
   } catch (error) {

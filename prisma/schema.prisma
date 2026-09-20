@@ -292,6 +292,14 @@ model MessageQueue {
   message      Message      @relation(fields: [messageId], references: [id], onDelete: Cascade)
 }
 
+model BlockedContact {
+  id          String   @id @default(cuid())
+  phoneNumber String   @unique
+  blockedAt   DateTime @default(now())
+
+  @@index([phoneNumber])
+}
+
 model ZapiQueueState {
   id                String    @id @default("singleton")
   sentToday         Int       @default(0)

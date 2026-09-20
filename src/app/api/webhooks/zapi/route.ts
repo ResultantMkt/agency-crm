@@ -102,15 +102,18 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    if (!conversation.leadId) {
-      const { leadId, created } = await findOrCreateLead({
-        name: incomingName ?? phoneNumber,
-        phone: phoneNumber,
-        source: "OTHER",
-        notes: "Lead gerado automaticamente via WhatsApp",
-      })
-      await prisma.conversation.update({ where: { id: conversation.id }, data: { leadId } })
-      if (created) console.log(`[zapi webhook] Lead criado: ${phoneNumber}`)
+    if (!conversation.leadId && !isGroup) {
+      const blocked = await prisma.blockedContact.findUnique({ where: { phoneNumber } })
+      if (!blocked) {
+        const { leadId, created } = await findOrCreateLead({
+          name: incomingName ?? phoneNumber,
+          phone: phoneNumber,
+          source: "OTHER",
+          notes: "Lead gerado automaticamente via WhatsApp",
+        })
+        await prisma.conversation.update({ where: { id: conversation.id }, data: { leadId } })
+        if (created) console.log(`[zapi webhook] Lead criado: ${phoneNumber}`)
+      }
     }
 
     const messageContent = hasMedia
