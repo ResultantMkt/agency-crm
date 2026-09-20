@@ -65,7 +65,8 @@ export async function POST(request: NextRequest) {
 
     return Response.json(message, { status: 201 })
   } catch (error) {
-    console.error("[POST /api/messages/send-media]", error)
-    return Response.json({ error: "Internal server error" }, { status: 500 })
+    const msg = error instanceof Error ? error.message : "Internal server error"
+    console.error("[POST /api/messages/send-media]", msg)
+    return Response.json({ error: msg }, { status: 500 })
   }
 }

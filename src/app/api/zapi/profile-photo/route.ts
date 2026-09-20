@@ -1,5 +1,5 @@
-import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
+import { getZapiConfig } from "@/lib/zapi"
 import { NextRequest } from "next/server"
 
 export async function GET(request: NextRequest) {
@@ -10,13 +10,7 @@ export async function GET(request: NextRequest) {
     const phone = request.nextUrl.searchParams.get("phone")
     if (!phone) return Response.json({ url: null })
 
-    const integration = await prisma.integration.findUnique({ where: { name: "ZAPI" } })
-    const config = integration?.config as Record<string, string> | null
-    const baseUrl = config?.baseUrl ?? "https://api.z-api.io/instances"
-    const instanceId = config?.instanceId ?? ""
-    const token = config?.token ?? ""
-    const clientToken = config?.clientToken ?? ""
-
+    const { baseUrl, instanceId, token, clientToken } = await getZapiConfig()
     if (!instanceId || !token) return Response.json({ url: null })
 
     const normalized = phone.replace(/\D/g, "")
@@ -28,7 +22,8 @@ export async function GET(request: NextRequest) {
     if (!res.ok) return Response.json({ url: null })
 
     const data = await res.json()
-    return Response.json({ url: data?.value ?? data?.url ?? null })
+    const url: string | null = data?.value ?? data?.url ?? data?.photo ?? null
+    return Response.json({ url })
   } catch {
     return Response.json({ url: null })
   }

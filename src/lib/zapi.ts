@@ -2,7 +2,13 @@ export function normalizePhone(phone: string): string {
   return phone.replace(/\D/g, "")
 }
 
-async function getZapiConfig() {
+/** Strip the `data:...;base64,` prefix — Z-API requires raw base64 for video/document */
+function extractBase64(dataUri: string): string {
+  const idx = dataUri.indexOf(";base64,")
+  return idx >= 0 ? dataUri.slice(idx + 8) : dataUri
+}
+
+export async function getZapiConfig() {
   const { prisma } = await import("@/lib/prisma")
   const integration = await prisma.integration.findUnique({ where: { name: "ZAPI" } })
   const config = integration?.config as Record<string, string> | null
@@ -59,16 +65,16 @@ export async function sendWhatsAppMedia(
       break
     case "video":
       endpoint = "send-video"
-      body = { phone: normalized, video: base64, caption: caption ?? "" }
+      body = { phone: normalized, video: extractBase64(base64), caption: caption ?? "" }
       break
     case "audio":
       endpoint = "send-audio"
-      body = { phone: normalized, audio: base64, audioType: "ogg" }
+      body = { phone: normalized, audio: extractBase64(base64), audioType: "ogg" }
       break
     case "document": {
       const ext = fileName?.split(".").pop()?.toLowerCase() ?? ""
       endpoint = "send-document"
-      body = { phone: normalized, document: base64, fileName: fileName ?? "arquivo", extension: ext, caption: caption ?? "" }
+      body = { phone: normalized, document: extractBase64(base64), fileName: fileName ?? "arquivo", extension: ext, caption: caption ?? "" }
       break
     }
   }

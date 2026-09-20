@@ -272,6 +272,10 @@ export function ChatWindow({
       if (res.ok) {
         const newMsg = await res.json()
         if (newMsg?.id) setOptimisticMedia((prev) => ({ ...prev, [newMsg.id]: objectUrl }))
+      } else {
+        const err = await res.json().catch(() => ({}))
+        setMessages((prev) => prev.filter((m) => m.id !== optId))
+        alert(`Erro ao enviar mídia: ${err?.error ?? res.status}`)
       }
       await fetchMessages()
     }
