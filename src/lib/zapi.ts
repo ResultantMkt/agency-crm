@@ -65,10 +65,12 @@ export async function sendWhatsAppMedia(
       endpoint = "send-audio"
       body = { phone: normalized, audio: base64, audioType: "ogg" }
       break
-    case "document":
+    case "document": {
+      const ext = fileName?.split(".").pop()?.toLowerCase() ?? ""
       endpoint = "send-document"
-      body = { phone: normalized, document: base64, fileName: fileName ?? "arquivo", caption: caption ?? "" }
+      body = { phone: normalized, document: base64, fileName: fileName ?? "arquivo", extension: ext, caption: caption ?? "" }
       break
+    }
   }
 
   const response = await fetch(`${baseUrl}/${instanceId}/token/${token}/${endpoint}`, {

@@ -62,6 +62,27 @@ function MiniAvatar({ name, photoUrl }: { name: string; photoUrl?: string | null
 
 // ─── Media renderers ─────────────────────────────────────────────────────────
 
+function VideoPreview({ src }: { src: string }) {
+  const [playing, setPlaying] = useState(false)
+  if (playing) {
+    return <video src={src} controls autoPlay className="max-w-full max-h-48 rounded-lg mb-1" preload="auto" />
+  }
+  return (
+    <div
+      className="relative rounded-lg mb-1 bg-black cursor-pointer overflow-hidden"
+      style={{ width: 220, height: 130 }}
+      onClick={() => setPlaying(true)}
+    >
+      <video src={src} className="w-full h-full object-cover opacity-60" preload="metadata" />
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="rounded-full bg-white/80 p-3">
+          <Play className="h-6 w-6 text-gray-900 fill-gray-900" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function MediaContent({ message, isOutbound }: { message: Message; isOutbound: boolean }) {
   const [lightboxOpen, setLightboxOpen] = useState(false)
 
@@ -93,14 +114,7 @@ function MediaContent({ message, isOutbound }: { message: Message; isOutbound: b
   if (message.mediaType === "video") {
     const src = message.mediaUrl
     if (!src) return <p className="text-xs italic opacity-70">[Vídeo]</p>
-    return (
-      <video
-        src={src}
-        controls
-        className="max-w-full max-h-48 rounded-lg mb-1"
-        preload="metadata"
-      />
-    )
+    return <VideoPreview src={src} />
   }
 
   if (message.mediaType === "audio") {

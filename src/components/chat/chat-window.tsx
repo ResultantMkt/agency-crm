@@ -264,11 +264,15 @@ export function ChatWindow({
     const reader = new FileReader()
     reader.onload = async (e) => {
       const base64 = e.target?.result as string
-      await fetch("/api/messages/send-media", {
+      const res = await fetch("/api/messages/send-media", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ conversationId, mediaType, mediaBase64: base64, mediaName: file.name }),
       })
+      if (res.ok) {
+        const newMsg = await res.json()
+        if (newMsg?.id) setOptimisticMedia((prev) => ({ ...prev, [newMsg.id]: objectUrl }))
+      }
       await fetchMessages()
     }
     reader.readAsDataURL(file)

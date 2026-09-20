@@ -6,6 +6,26 @@ import { MessageSquare, Search, ChevronDown, ChevronRight, MoreVertical, Pin, Ar
 import { ChatWindow } from "@/components/chat/chat-window"
 import type { Conversation } from "@/types/models"
 
+// ─── Profile photo cache (localStorage, 24h TTL) ─────────────────────────────
+
+const PHOTO_TTL = 24 * 60 * 60 * 1000
+
+function getCachedPhoto(convId: string): string | null | undefined {
+  try {
+    const raw = localStorage.getItem(`pp:${convId}`)
+    if (!raw) return undefined
+    const { url, expiresAt } = JSON.parse(raw) as { url: string | null; expiresAt: number }
+    if (Date.now() > expiresAt) { localStorage.removeItem(`pp:${convId}`); return undefined }
+    return url
+  } catch { return undefined }
+}
+
+function setCachedPhoto(convId: string, url: string | null) {
+  try {
+    localStorage.setItem(`pp:${convId}`, JSON.stringify({ url, expiresAt: Date.now() + PHOTO_TTL }))
+  } catch { /* storage full */ }
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatTime(dateStr: string): string {
@@ -216,10 +236,19 @@ export default function ChatPage() {
 
   function ensurePhoto(conv: Conversation) {
     if (conv.id in profilePhotos || photoLoadingRef.current.has(conv.id)) return
+    const cached = getCachedPhoto(conv.id)
+    if (cached !== undefined) {
+      setProfilePhotos((prev) => ({ ...prev, [conv.id]: cached }))
+      return
+    }
     photoLoadingRef.current.add(conv.id)
     fetch(`/api/zapi/profile-photo?phone=${encodeURIComponent(conv.phoneNumber)}`)
       .then((r) => r.ok ? r.json() : { url: null })
-      .then((data) => setProfilePhotos((prev) => ({ ...prev, [conv.id]: data?.url ?? null })))
+      .then((data) => {
+        const url: string | null = data?.url ?? null
+        setCachedPhoto(conv.id, url)
+        setProfilePhotos((prev) => ({ ...prev, [conv.id]: url }))
+      })
       .catch(() => setProfilePhotos((prev) => ({ ...prev, [conv.id]: null })))
   }
 

@@ -40,7 +40,12 @@ export async function POST(request: NextRequest) {
       caption
     )
 
-    // Store message (no mediaUrl for outbound — we don't get a public URL back from Z-API send)
+    // For small images, persist the data URL so preview survives page reload
+    const MAX_INLINE_BASE64 = 800_000
+    const storedMediaUrl = mediaType === "image" && mediaBase64.length < MAX_INLINE_BASE64
+      ? mediaBase64
+      : null
+
     const message = await prisma.message.create({
       data: {
         conversationId,
@@ -49,7 +54,7 @@ export async function POST(request: NextRequest) {
         senderName: session.user.name ?? null,
         mediaType,
         mediaName: mediaName ?? null,
-        // mediaUrl: null — the base64 is too large to store; shown via optimistic URL during session
+        mediaUrl: storedMediaUrl,
       },
     })
 
