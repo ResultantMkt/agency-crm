@@ -7,9 +7,12 @@ import { z } from "zod"
 const schema = z.object({
   conversationId: z.string().min(1),
   mediaType: z.enum(["image", "video", "audio", "document"]),
-  mediaBase64: z.string().min(1),   // data: URL (includes mime prefix)
-  mediaName: z.string().optional(), // filename for documents
+  mediaUrl: z.string().url().optional(),     // Vercel Blob URL (preferred)
+  mediaBase64: z.string().min(1).optional(), // legacy: small images only
+  mediaName: z.string().optional(),
   caption: z.string().optional(),
+}).refine((d) => d.mediaUrl ?? d.mediaBase64, {
+  message: "mediaUrl or mediaBase64 is required",
 })
 
 export async function POST(request: NextRequest) {
@@ -23,7 +26,8 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "Validation error", details: parsed.error.issues }, { status: 400 })
     }
 
-    const { conversationId, mediaType, mediaBase64, mediaName, caption } = parsed.data
+    const { conversationId, mediaType, mediaUrl, mediaBase64, mediaName, caption } = parsed.data
+    const mediaData = mediaUrl ?? mediaBase64!
 
     const conversation = await prisma.conversation.findUnique({
       where: { id: conversationId },
@@ -31,20 +35,16 @@ export async function POST(request: NextRequest) {
     })
     if (!conversation) return Response.json({ error: "Conversation not found" }, { status: 404 })
 
-    // Send to Z-API directly (bypass queue — media is sent immediately)
     await sendWhatsAppMedia(
       conversation.phoneNumber,
       mediaType as MediaType,
-      mediaBase64,
+      mediaData,
       mediaName,
       caption
     )
 
-    // For small images, persist the data URL so preview survives page reload
-    const MAX_INLINE_BASE64 = 800_000
-    const storedMediaUrl = mediaType === "image" && mediaBase64.length < MAX_INLINE_BASE64
-      ? mediaBase64
-      : null
+    const storedUrl = mediaUrl
+      ?? (mediaBase64 && mediaType === "image" && mediaBase64.length < 800_000 ? mediaBase64 : null)
 
     const message = await prisma.message.create({
       data: {
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
         senderName: session.user.name ?? null,
         mediaType,
         mediaName: mediaName ?? null,
-        mediaUrl: storedMediaUrl,
+        mediaUrl: storedUrl,
       },
     })
 

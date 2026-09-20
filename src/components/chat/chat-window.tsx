@@ -6,9 +6,18 @@ import {
   Search, Pin, Archive, Star, Trash2, MoreVertical,
   ChevronUp, ChevronDown, Paperclip, FileText, Image, Mic, MicOff,
 } from "lucide-react"
+import { upload } from "@vercel/blob/client"
 import { MessageBubble } from "@/components/chat/message-bubble"
 import { ContactPanel } from "@/components/chat/contact-panel"
 import type { Conversation, Message } from "@/types/models"
+
+// WhatsApp media size limits (bytes)
+const MAX_SIZE: Record<string, number> = {
+  image:    5  * 1024 * 1024,
+  video:    16 * 1024 * 1024,
+  audio:    16 * 1024 * 1024,
+  document: 100 * 1024 * 1024,
+}
 
 // ─── Date separator helpers ──────────────────────────────────────────────────
 
@@ -244,6 +253,13 @@ export function ChatWindow({
   // ── Send media ──────────────────────────────────────────────────────────────
 
   async function sendMedia(file: File, mediaType: "image" | "video" | "audio" | "document") {
+    const maxBytes = MAX_SIZE[mediaType] ?? 16 * 1024 * 1024
+    if (file.size > maxBytes) {
+      const mb = Math.round(maxBytes / 1024 / 1024)
+      alert(`O arquivo excede o limite de ${mb} MB para ${mediaType === "image" ? "imagem" : mediaType === "video" ? "vídeo" : mediaType === "audio" ? "áudio" : "documento"}.`)
+      return
+    }
+
     const objectUrl = URL.createObjectURL(file)
     const optId = `opt-${Date.now()}`
 
@@ -261,14 +277,19 @@ export function ChatWindow({
     setMessages((prev) => [...prev, optimistic])
     setOptimisticMedia((prev) => ({ ...prev, [optId]: objectUrl }))
 
-    const reader = new FileReader()
-    reader.onload = async (e) => {
-      const base64 = e.target?.result as string
+    try {
+      // Upload directly to Vercel Blob (bypasses Vercel Function body size limit)
+      const blob = await upload(file.name, file, {
+        access: "public",
+        handleUploadUrl: "/api/upload",
+      })
+
       const res = await fetch("/api/messages/send-media", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ conversationId, mediaType, mediaBase64: base64, mediaName: file.name }),
+        body: JSON.stringify({ conversationId, mediaType, mediaUrl: blob.url, mediaName: file.name }),
       })
+
       if (res.ok) {
         const newMsg = await res.json()
         if (newMsg?.id) setOptimisticMedia((prev) => ({ ...prev, [newMsg.id]: objectUrl }))
@@ -277,9 +298,12 @@ export function ChatWindow({
         setMessages((prev) => prev.filter((m) => m.id !== optId))
         alert(`Erro ao enviar mídia: ${err?.error ?? res.status}`)
       }
-      await fetchMessages()
+    } catch (err) {
+      setMessages((prev) => prev.filter((m) => m.id !== optId))
+      alert(`Erro ao enviar mídia: ${err instanceof Error ? err.message : String(err)}`)
     }
-    reader.readAsDataURL(file)
+
+    await fetchMessages()
   }
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
