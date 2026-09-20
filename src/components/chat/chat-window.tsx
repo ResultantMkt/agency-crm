@@ -11,12 +11,12 @@ import { MessageBubble } from "@/components/chat/message-bubble"
 import { ContactPanel } from "@/components/chat/contact-panel"
 import type { Conversation, Message } from "@/types/models"
 
-// WhatsApp media size limits (bytes)
+// WhatsApp/Z-API media size limits (bytes)
 const MAX_SIZE: Record<string, number> = {
-  image:    5  * 1024 * 1024,
-  video:    16 * 1024 * 1024,
-  audio:    16 * 1024 * 1024,
-  document: 100 * 1024 * 1024,
+  image:    5  * 1024 * 1024,   // WhatsApp: 5 MB
+  video:    50 * 1024 * 1024,   // Z-API/WhatsApp Web: up to ~50 MB
+  audio:    16 * 1024 * 1024,   // WhatsApp: 16 MB
+  document: 100 * 1024 * 1024,  // WhatsApp: 100 MB
 }
 
 // ─── Date separator helpers ──────────────────────────────────────────────────

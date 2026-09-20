@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       request,
       onBeforeGenerateToken: async () => ({
         allowedContentTypes: ALLOWED_TYPES,
-        maximumSizeInBytes: 100 * 1024 * 1024, // 100 MB
+        maximumSizeInBytes: 100 * 1024 * 1024, // 100 MB (documents; images/video/audio validated client-side)
       }),
       onUploadCompleted: async () => {},
     })
