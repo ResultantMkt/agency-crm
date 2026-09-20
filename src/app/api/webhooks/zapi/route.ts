@@ -56,6 +56,11 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
 
+    // Ignore echo events fired when the instance itself sends a message
+    if (body.fromMe === true || body.isFromMe === true) {
+      return Response.json({ ok: true })
+    }
+
     const rawPhone: string | undefined = body.phone ?? body.from
     const text: string | undefined = body.text?.message ?? body.message?.text
     const senderName: string | undefined = body.senderName ?? body.pushName
