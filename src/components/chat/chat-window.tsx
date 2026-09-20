@@ -10,6 +10,44 @@ import { MessageBubble } from "@/components/chat/message-bubble"
 import { ContactPanel } from "@/components/chat/contact-panel"
 import type { Conversation, Message } from "@/types/models"
 
+// ─── Date separator helpers ──────────────────────────────────────────────────
+
+const TZ = "America/Sao_Paulo"
+
+function toSpDate(dateStr: string): Date {
+  return new Date(new Date(dateStr).toLocaleString("en-US", { timeZone: TZ }))
+}
+
+function isSameDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+}
+
+function formatDateLabel(dateStr: string): string {
+  const msgDate = toSpDate(dateStr)
+  const today = toSpDate(new Date().toISOString())
+  const diffMs = today.getTime() - msgDate.getTime()
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+  if (diffDays === 0) return "Hoje"
+  if (diffDays === 1) return "Ontem"
+  if (diffDays < 7) {
+    return new Intl.DateTimeFormat("pt-BR", { weekday: "long", timeZone: TZ }).format(new Date(dateStr))
+  }
+  return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: TZ }).format(new Date(dateStr))
+}
+
+function DateSeparator({ dateStr }: { dateStr: string }) {
+  return (
+    <div className="flex items-center justify-center py-2">
+      <span className="rounded-full bg-gray-200/80 px-3 py-0.5 text-[11px] font-medium text-gray-500 select-none">
+        {formatDateLabel(dateStr)}
+      </span>
+    </div>
+  )
+}
+
 // ─── Avatar helpers ───────────────────────────────────────────────────────────
 
 const AVATAR_COLORS = [
@@ -453,28 +491,31 @@ export function ChatWindow({
               messages.map((msg, idx) => {
                 const isMatch = searchQuery && matchIds.includes(msg.id)
                 const isCurrentMatch = isMatch && matchIds[matchCursor] === msg.id
-                // For optimistic media, use local blob URL if no mediaUrl stored
                 const displayMsg = optimisticMedia[msg.id]
                   ? { ...msg, mediaUrl: optimisticMedia[msg.id] }
                   : msg
+                const prevMsg = idx > 0 ? messages[idx - 1] : null
+                const showDateSep = !prevMsg || !isSameDay(toSpDate(prevMsg.sentAt), toSpDate(msg.sentAt))
                 return (
-                  <div
-                    key={msg.id}
-                    ref={(el) => {
-                      matchRefs.current[idx] = el
-                      const mi = matchIds.indexOf(msg.id)
-                      if (mi >= 0) matchRefs.current[mi] = el
-                    }}
-                    className={isCurrentMatch ? "rounded-lg ring-2 ring-blue-400/40 ring-offset-2 ring-offset-gray-900" : ""}
-                  >
-                    <MessageBubble
-                      message={displayMsg}
-                      isPinned={msg.id === conversation.pinnedMessageId}
-                      highlight={searchQuery.trim() || undefined}
-                      onPin={() => handlePinMessage(msg.id)}
-                      contactName={resolvedName}
-                      contactPhoto={photoUrl}
-                    />
+                  <div key={msg.id}>
+                    {showDateSep && <DateSeparator dateStr={msg.sentAt} />}
+                    <div
+                      ref={(el) => {
+                        matchRefs.current[idx] = el
+                        const mi = matchIds.indexOf(msg.id)
+                        if (mi >= 0) matchRefs.current[mi] = el
+                      }}
+                      className={isCurrentMatch ? "rounded-lg ring-2 ring-blue-400/40 ring-offset-2 ring-offset-gray-900" : ""}
+                    >
+                      <MessageBubble
+                        message={displayMsg}
+                        isPinned={msg.id === conversation.pinnedMessageId}
+                        highlight={searchQuery.trim() || undefined}
+                        onPin={() => handlePinMessage(msg.id)}
+                        contactName={resolvedName}
+                        contactPhoto={photoUrl}
+                      />
+                    </div>
                   </div>
                 )
               })
