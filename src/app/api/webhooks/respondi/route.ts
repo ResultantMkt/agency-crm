@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
   try {
     const { leadId, created } = await findOrCreateLead({
       name: name ?? normalizedPhone ?? email ?? "Sem nome",
-      phone: normalizedPhone ?? "",
+      phone: normalizedPhone ?? null,
       email: email ?? null,
       source: "TRAFFIC",
       notes: `Lead gerado automaticamente via Respondi Forms${strVal(raw.form_id) ? ` (form: ${raw.form_id})` : ""}`,

@@ -83,9 +83,10 @@ async function main() {
 
   const phoneMap = new Map<string, typeof allLeads>()
   for (const lead of allLeads) {
-    const existing = phoneMap.get(lead.phone) ?? []
+    const key = lead.phone ?? ""
+    const existing = phoneMap.get(key) ?? []
     existing.push(lead)
-    phoneMap.set(lead.phone, existing)
+    phoneMap.set(key, existing)
   }
 
   const duplicates = [...phoneMap.entries()].filter(([, leads]) => leads.length > 1)
@@ -112,7 +113,7 @@ async function main() {
 
   const ignoredLeads =
     ignoredVariants.size > 0
-      ? allLeads.filter(l => ignoredVariants.has(l.phone))
+      ? allLeads.filter(l => l.phone != null && ignoredVariants.has(l.phone))
       : []
 
   console.log(

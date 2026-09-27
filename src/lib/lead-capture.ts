@@ -5,7 +5,8 @@ import type { LeadSource } from "@/types/models"
 
 interface LeadCaptureInput {
   name: string
-  phone: string
+  /** Pass null or empty string when the lead has no phone number. */
+  phone?: string | null
   email?: string | null
   source: LeadSource
   notes?: string
@@ -19,17 +20,31 @@ interface LeadCaptureResult {
 /**
  * Finds an existing lead by phone (all BR variants) or email, and returns it,
  * or creates a new one in stage LEAD if none is found.
- * Handles concurrent requests via unique constraint + P2002 catch to prevent duplicates.
+ * Stores phone as NULL when empty — matches the partial unique index on the DB.
  */
 export async function findOrCreateLead(
   input: LeadCaptureInput
 ): Promise<LeadCaptureResult> {
-  const { name, phone, email, source, notes } = input
+  const { name, email, source, notes } = input
 
-  // Search using all Brazilian phone variants (with/without 55, with/without 9th digit)
-  const phoneVariants = phoneBRVariants(phone)
-  const orConditions: { phone?: string; email?: string }[] = phoneVariants.map(p => ({ phone: p }))
+  // Normalise: treat empty string as null
+  const phone = input.phone?.trim() || null
+
+  // Build dedup conditions
+  const orConditions: { phone?: string | null; email?: string }[] = []
+  if (phone) {
+    const phoneVariants = phoneBRVariants(phone)
+    for (const v of phoneVariants) orConditions.push({ phone: v })
+  }
   if (email) orConditions.push({ email })
+
+  if (orConditions.length === 0) {
+    // No identifiers at all — create without dedup (shouldn't normally happen)
+    const lead = await prisma.lead.create({
+      data: { name, phone: null, email: null, source, stage: "LEAD", notes: notes ?? null },
+    })
+    return { leadId: lead.id, created: true }
+  }
 
   const existing = await prisma.lead.findFirst({
     where: { OR: orConditions },
@@ -46,7 +61,7 @@ export async function findOrCreateLead(
     return { leadId: existing.id, created: false }
   }
 
-  // Try to create. If a concurrent request already created the same phone, catch P2002.
+  // Try to create. Catch P2002 from the partial unique index (concurrent race).
   try {
     const lead = await prisma.lead.create({
       data: {
@@ -61,7 +76,7 @@ export async function findOrCreateLead(
     return { leadId: lead.id, created: true }
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
-      // Race condition: another concurrent request created the lead just before us
+      const phoneVariants = phone ? phoneBRVariants(phone) : []
       const race = await prisma.lead.findFirst({
         where: { OR: phoneVariants.map(p => ({ phone: p })) },
         select: { id: true },

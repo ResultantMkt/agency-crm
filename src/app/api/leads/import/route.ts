@@ -31,7 +31,7 @@ export async function POST(request: Request) {
 
     // Build a set of all existing phones for dedup
     const existingLeads = await prisma.lead.findMany({ select: { phone: true } })
-    const existingPhones = new Set(existingLeads.map((l) => normalizePhone(l.phone)))
+    const existingPhones = new Set(existingLeads.map((l) => l.phone ? normalizePhone(l.phone) : null).filter(Boolean))
 
     let created = 0
     let skipped = 0

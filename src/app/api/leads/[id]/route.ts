@@ -124,7 +124,7 @@ export async function DELETE(
 
     await prisma.lead.delete({ where: { id } })
 
-    const phone = normalizePhone(existing.phone)
+    const phone = existing.phone ? normalizePhone(existing.phone) : null
     if (phone) {
       await prisma.blockedContact.upsert({
         where: { phoneNumber: phone },

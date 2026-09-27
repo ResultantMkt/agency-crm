@@ -142,7 +142,7 @@ model Lead {
   source         LeadSource @default(OTHER)
   stage          String     @default("LEAD")
   position       Int        @default(0)
-  phone          String     @unique
+  phone          String?
   email          String?
   assignedToId   String?
   estimatedValue Decimal?   @db.Decimal(10, 2)
