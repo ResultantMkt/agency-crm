@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { createTaskSchema } from "@/lib/validations/task"
+import { emitLeadEvent } from "@/lib/automation-engine"
 import { NextRequest } from "next/server"
 
 export async function GET(request: NextRequest) {
@@ -69,6 +70,10 @@ export async function POST(request: NextRequest) {
         clientId: data.clientId,
       },
     })
+
+    if (task.leadId) {
+      emitLeadEvent("activity.created", task.leadId, { taskId: task.id, title: task.title }).catch(() => {})
+    }
 
     return Response.json(task, { status: 201 })
   } catch (error) {

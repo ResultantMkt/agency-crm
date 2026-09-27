@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { webhookLeadSchema } from "@/lib/validations/lead"
+import { emitLeadEvent } from "@/lib/automation-engine"
 import { NextRequest } from "next/server"
 
 export async function POST(request: NextRequest) {
@@ -32,6 +33,8 @@ export async function POST(request: NextRequest) {
         notes: data.notes,
       },
     })
+
+    emitLeadEvent("lead.created", lead.id, { source: lead.source }).catch(() => {})
 
     return Response.json({ success: true, leadId: lead.id }, { status: 201 })
   } catch (error) {

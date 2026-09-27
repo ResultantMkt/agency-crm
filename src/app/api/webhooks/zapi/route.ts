@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { normalizePhone, phoneBRVariants } from "@/lib/zapi"
 import { findOrCreateLead } from "@/lib/lead-capture"
+import { emitLeadEvent } from "@/lib/automation-engine"
 import { NextRequest } from "next/server"
 
 type ZapiMediaType = "image" | "video" | "audio" | "document" | "sticker"
@@ -156,7 +157,10 @@ export async function POST(request: NextRequest) {
             notes: "Lead gerado automaticamente via WhatsApp",
           })
           await prisma.conversation.update({ where: { id: conversation.id }, data: { leadId } })
-          if (created) console.log(`[zapi webhook] Lead criado: ${phoneNumber}`)
+          if (created) {
+            console.log(`[zapi webhook] Lead criado: ${phoneNumber}`)
+            emitLeadEvent("lead.created", leadId, { source: "OTHER", via: "zapi" }).catch(() => {})
+          }
         }
       }
     }

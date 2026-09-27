@@ -1,5 +1,6 @@
 import { findOrCreateLead } from "@/lib/lead-capture"
 import { normalizePhone } from "@/lib/zapi"
+import { emitLeadEvent } from "@/lib/automation-engine"
 import { NextRequest } from "next/server"
 
 /**
@@ -117,6 +118,11 @@ export async function POST(request: NextRequest) {
     console.log(
       `[respondi webhook] Lead ${created ? "criado" : "já existia"}: id=${leadId} phone=${normalizedPhone} email=${email}`
     )
+
+    if (created) {
+      emitLeadEvent("lead.created", leadId, { source: "TRAFFIC", via: "respondi" }).catch(() => {})
+      emitLeadEvent("form.submitted", leadId, { source: "TRAFFIC", via: "respondi" }).catch(() => {})
+    }
 
     return Response.json({ ok: true, leadId, created }, { status: created ? 201 : 200 })
   } catch (error) {

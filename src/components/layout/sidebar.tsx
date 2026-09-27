@@ -24,6 +24,7 @@ import {
   ChevronUp,
   LogOut,
   UserCircle,
+  Zap,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -147,6 +148,7 @@ export function Sidebar({ overdueCount = 0 }: SidebarProps) {
       activeWhen: ["/comercial", "/crm", "/chat", "/tasks"],
       children: [
         { href: "/comercial/dashboard", label: "Dashboard", icon: BarChart2 },
+        { href: "/comercial/automacoes", label: "Automações", icon: Zap },
         { href: "/crm", label: "CRM", icon: Kanban, badge: crmCount },
         { href: "/chat", label: "Chats", icon: MessageSquare, badge: chatsCount },
         { href: "/tasks", label: "Tarefas", icon: CheckSquare, badge: overdueCount },

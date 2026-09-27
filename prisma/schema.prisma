@@ -154,6 +154,7 @@ model Lead {
   history       LeadHistory[]
   tasks         Task[]         @relation("LeadTasks")
   conversations Conversation[]
+  leadSequences LeadSequence[]
 
   @@index([stage])
   @@index([createdAt])
@@ -218,9 +219,10 @@ model Task {
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
-  assignedTo User?   @relation("AssignedTasks", fields: [assignedToId], references: [id])
-  lead       Lead?   @relation("LeadTasks", fields: [leadId], references: [id])
-  client     Client? @relation("ClientTasks", fields: [clientId], references: [id])
+  assignedTo   User?              @relation("AssignedTasks", fields: [assignedToId], references: [id])
+  lead         Lead?              @relation("LeadTasks", fields: [leadId], references: [id])
+  client       Client?            @relation("ClientTasks", fields: [clientId], references: [id])
+  sequenceStep LeadSequenceStep?
 
   @@index([status])
   @@index([assignedToId])
@@ -316,4 +318,136 @@ model ZapiQueueState {
   warmupStartDate   DateTime?
   warmupMultiplier  Float     @default(1.0)
   updatedAt         DateTime  @updatedAt
+}
+
+model AutomationLabel {
+  id          String       @id @default(cuid())
+  name        String
+  color       String       @default("#6366f1")
+  createdAt   DateTime     @default(now())
+  automations Automation[] @relation("AutomationLabels")
+}
+
+model Automation {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  active      Boolean   @default(false)
+  trigger     Json
+  steps       Json      @default("[]")
+  runCount    Int       @default(0)
+  lastRunAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  labels AutomationLabel[] @relation("AutomationLabels")
+  jobs   AutomationJob[]
+  runs   AutomationRun[]
+}
+
+model AutomationJob {
+  id             String    @id @default(cuid())
+  automationId   String
+  leadId         String?
+  triggerType    String
+  triggerData    Json
+  status         String    @default("PENDING")
+  attempts       Int       @default(0)
+  depth          Int       @default(0)
+  error          String?   @db.Text
+  idempotencyKey String    @unique
+  createdAt      DateTime  @default(now())
+  processedAt    DateTime?
+
+  automation Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+}
+
+model AutomationRun {
+  id           String    @id @default(cuid())
+  automationId String
+  leadId       String?
+  leadName     String?
+  triggerType  String
+  triggerData  Json
+  status       String
+  stepResults  Json      @default("[]")
+  createdAt    DateTime  @default(now())
+
+  automation Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+
+  @@index([automationId, createdAt])
+  @@index([createdAt])
+}
+
+model Sequence {
+  id          String         @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  steps     SequenceStep[]
+  leadSeqs  LeadSequence[]
+  templates WhatsAppTemplate[]
+}
+
+model SequenceStep {
+  id          String   @id @default(cuid())
+  sequenceId  String
+  position    Int
+  title       String
+  type        String
+  script      String   @db.Text
+  delayDays   Int      @default(0)
+  delayHours  Int      @default(0)
+  anchorField String?
+
+  sequence  Sequence           @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  leadSteps LeadSequenceStep[]
+
+  @@index([sequenceId, position])
+}
+
+model LeadSequence {
+  id         String    @id @default(cuid())
+  leadId     String
+  sequenceId String
+  status     String    @default("ACTIVE")
+  startedAt  DateTime  @default(now())
+  anchorDate DateTime?
+
+  lead     Lead             @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  sequence Sequence         @relation(fields: [sequenceId], references: [id])
+  steps    LeadSequenceStep[]
+
+  @@index([leadId, status])
+}
+
+model LeadSequenceStep {
+  id             String    @id @default(cuid())
+  leadSequenceId String
+  sequenceStepId String
+  taskId         String?   @unique
+  status         String    @default("PENDING")
+  scheduledAt    DateTime
+  completedAt    DateTime?
+
+  leadSequence LeadSequence @relation(fields: [leadSequenceId], references: [id], onDelete: Cascade)
+  sequenceStep SequenceStep @relation(fields: [sequenceStepId], references: [id])
+  task         Task?        @relation(fields: [taskId], references: [id])
+
+  @@index([leadSequenceId])
+}
+
+model WhatsAppTemplate {
+  id         String    @id @default(cuid())
+  name       String
+  body       String    @db.Text
+  sequenceId String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  sequence Sequence? @relation(fields: [sequenceId], references: [id], onDelete: SetNull)
 }

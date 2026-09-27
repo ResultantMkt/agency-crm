@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { createLeadSchema } from "@/lib/validations/lead"
+import { emitLeadEvent } from "@/lib/automation-engine"
 import { NextRequest } from "next/server"
 
 export async function GET(request: NextRequest) {
@@ -75,6 +76,8 @@ export async function POST(request: NextRequest) {
         note: "Lead criado",
       },
     })
+
+    emitLeadEvent("lead.created", lead.id, { source: lead.source, stage: lead.stage }).catch(() => {})
 
     return Response.json(lead, { status: 201 })
   } catch (error) {

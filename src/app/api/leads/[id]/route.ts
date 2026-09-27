@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { updateLeadSchema } from "@/lib/validations/lead"
 import { normalizePhone } from "@/lib/zapi"
+import { emitLeadEvent } from "@/lib/automation-engine"
 import { NextRequest } from "next/server"
 
 export async function GET(
@@ -85,6 +86,16 @@ export async function PATCH(
           changedById: session.user.id,
         },
       })
+    }
+
+    // Always emit lead.updated_any
+    emitLeadEvent("lead.updated_any", id, { fields: Object.keys(data) }).catch(() => {})
+
+    if (data.stage && data.stage !== existing.stage) {
+      const stageType = data.stage === "CLOSED" ? "lead.won" : data.stage === "LOST" ? "lead.lost" : "lead.stage_changed"
+      emitLeadEvent(stageType, id, { fromStage: existing.stage, toStage: data.stage }).catch(() => {})
+    } else if (Object.keys(data).some(k => k !== "stage")) {
+      emitLeadEvent("lead.updated", id, { fields: Object.keys(data) }).catch(() => {})
     }
 
     return Response.json(updated)

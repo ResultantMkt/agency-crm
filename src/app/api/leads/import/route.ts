@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
+import { emitLeadEvent } from "@/lib/automation-engine"
 import { z } from "zod"
 
 const VALID_SOURCES = ["TRAFFIC", "PROSPECTING", "REFERRAL", "OTHER"] as const
@@ -79,6 +80,7 @@ export async function POST(request: Request) {
               note: "Lead importado via CSV",
             },
           })
+          emitLeadEvent("lead.created", lead.id, { source: data.source, via: "csv" }).catch(() => {})
           created++
         }
       })
