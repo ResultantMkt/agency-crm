@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma"
-import { normalizePhone } from "@/lib/zapi"
+import { normalizePhone, phoneBRVariants } from "@/lib/zapi"
 import { findOrCreateLead } from "@/lib/lead-capture"
 import { NextRequest } from "next/server"
 
@@ -42,6 +42,18 @@ function extractMedia(body: Record<string, unknown>): {
   return { mediaType: null, mediaUrl: null, mediaName: null, caption: null }
 }
 
+/** Parse IGNORED_LEAD_PHONES env var (comma-separated) into a Set of all phone variants */
+function buildIgnoredSet(): Set<string> {
+  const raw = process.env.IGNORED_LEAD_PHONES ?? ""
+  const set = new Set<string>()
+  for (const entry of raw.split(",")) {
+    const trimmed = entry.trim()
+    if (!trimmed) continue
+    for (const v of phoneBRVariants(trimmed)) set.add(v)
+  }
+  return set
+}
+
 export async function POST(request: NextRequest) {
   const secret = process.env.WEBHOOK_SECRET
   if (secret) {
@@ -61,11 +73,25 @@ export async function POST(request: NextRequest) {
       return Response.json({ ok: true })
     }
 
+    // Ignore status updates, broadcasts, and newsletters
+    if (
+      body.isStatusMessage === true ||
+      body.isNewsletter === true ||
+      body.type === "broadcast" ||
+      body.type === "status"
+    ) {
+      return Response.json({ ok: true })
+    }
+
     const rawPhone: string | undefined = body.phone ?? body.from
     const text: string | undefined = body.text?.message ?? body.message?.text
     const senderName: string | undefined = body.senderName ?? body.pushName
 
-    const isGroup = typeof rawPhone === "string" && rawPhone.includes("@g.us")
+    // Detect groups: Z-API may signal via the phone suffix (@g.us) or directly via body.isGroup
+    const isGroup =
+      body.isGroup === true ||
+      (typeof rawPhone === "string" && rawPhone.includes("@g.us"))
+
     const groupName: string | null = isGroup
       ? ((body.subject ?? body.chatName ?? body.groupName ?? null) as string | null)
       : null
@@ -107,17 +133,31 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    if (!conversation.leadId && !isGroup) {
-      const blocked = await prisma.blockedContact.findUnique({ where: { phoneNumber } })
-      if (!blocked) {
-        const { leadId, created } = await findOrCreateLead({
-          name: incomingName ?? phoneNumber,
-          phone: phoneNumber,
-          source: "OTHER",
-          notes: "Lead gerado automaticamente via WhatsApp",
+    // Only create a lead when:
+    // 1. This conversation isn't already linked to a lead or client
+    // 2. Not a group message
+    // 3. Not in the ignored phones list (internal team numbers)
+    // 4. Not blocked
+    if (!conversation.leadId && !conversation.clientId && !isGroup) {
+      const ignoredSet = buildIgnoredSet()
+      const phoneVariants = phoneBRVariants(phoneNumber)
+      const isIgnored = phoneVariants.some(v => ignoredSet.has(v))
+
+      if (!isIgnored) {
+        const blocked = await prisma.blockedContact.findFirst({
+          where: { phoneNumber: { in: phoneVariants } },
         })
-        await prisma.conversation.update({ where: { id: conversation.id }, data: { leadId } })
-        if (created) console.log(`[zapi webhook] Lead criado: ${phoneNumber}`)
+
+        if (!blocked) {
+          const { leadId, created } = await findOrCreateLead({
+            name: incomingName ?? phoneNumber,
+            phone: phoneNumber,
+            source: "OTHER",
+            notes: "Lead gerado automaticamente via WhatsApp",
+          })
+          await prisma.conversation.update({ where: { id: conversation.id }, data: { leadId } })
+          if (created) console.log(`[zapi webhook] Lead criado: ${phoneNumber}`)
+        }
       }
     }
 

@@ -2,6 +2,48 @@ export function normalizePhone(phone: string): string {
   return phone.replace(/\D/g, "")
 }
 
+/**
+ * Returns all plausible phone variants for deduplication lookup.
+ * Handles Brazilian numbers with/without country code (55) and with/without the 9th mobile digit.
+ * Example: "5511987654321" → ["5511987654321","11987654321","551187654321","1187654321"]
+ */
+export function phoneBRVariants(raw: string): string[] {
+  const digits = raw.replace(/\D/g, "")
+  if (!digits) return []
+  const set = new Set<string>([digits])
+
+  let base = digits
+  if (!digits.startsWith("55") && (digits.length === 10 || digits.length === 11)) {
+    base = "55" + digits
+    set.add(base)
+  }
+
+  if (base.startsWith("55")) {
+    const local = base.slice(2)
+    set.add(local)
+
+    if (local.length === 11) {
+      // Could have 9th digit: DDD(2) + 9 + 8 digits
+      const ddd = local.slice(0, 2)
+      const num = local.slice(2)
+      if (num.startsWith("9")) {
+        const short = ddd + num.slice(1)
+        set.add(short)
+        set.add("55" + short)
+      }
+    } else if (local.length === 10) {
+      // Could be missing 9th digit: DDD(2) + 8 digits
+      const ddd = local.slice(0, 2)
+      const num = local.slice(2)
+      const long = ddd + "9" + num
+      set.add(long)
+      set.add("55" + long)
+    }
+  }
+
+  return [...set]
+}
+
 /** Strip the `data:...;base64,` prefix — Z-API requires raw base64 for video/document */
 function extractBase64(dataUri: string): string {
   const idx = dataUri.indexOf(";base64,")
